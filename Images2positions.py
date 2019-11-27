@@ -322,7 +322,7 @@ def pixrealH(file, index=0):
     image = readcropimage(file)
 
     # Extract pixel values from image
-    xpix = findlines(image)
+    xpix = findlines(image,centerpx)
 
     # Water height per found line
     H  = Hlist[index]    
@@ -504,6 +504,9 @@ def main():
     f = open(args.f, 'r')
     settings = json.loads(f.read())
     
+    # Set global variables, which is ugly and should be done better
+    global bounds, centerpx, linespacingpx, Hlist, linespacing, n, thresholdvalue, xc, Hc
+    
     # Directories
     basedir = '/PhD/Experimenten/Jeroen/26-11-2019/'
     calibrationdir = basedir + 'Calibration/'
@@ -652,7 +655,7 @@ def main():
         image_noparticles = removeparticles(image,markers)
 
         # Find lines in pixel values
-        lines = findlines(np.uint8(image_noparticles/16))
+        lines = findlines(np.uint8(image_noparticles/16),centerpx)
 
         if verbose: print('Line positions found')
 
