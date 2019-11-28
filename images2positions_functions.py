@@ -33,7 +33,7 @@ def readcropimage(path,bounds=0,bitdepth=8):
 
 
 # Threshold the input
-def thresholdimage(image,bordered=True):
+def thresholdimage(image,thresholdvalue,bordered=True):
     kernel = np.ones((3,3),np.uint8)
     _, threshold = cv2.threshold(image,thresholdvalue,255,cv2.THRESH_BINARY)
     threshold = cv2.morphologyEx(threshold,cv2.MORPH_OPEN,kernel,iterations=1)
@@ -128,9 +128,9 @@ def findlines(image, centerpx=None, binarize=False, gaussianfilter=True, linespa
     return lines
 
 
-def findparticles(image):
+def findparticles(image,thresholdvalue):
     # Threshold the image
-    threshold = thresholdimage(image,bordered=True)
+    threshold = thresholdimage(image,thresholdvalue,bordered=True)
 
     # Compute element of picture that are surely background or foreground
     sure_background = background(threshold)
@@ -268,10 +268,10 @@ def particlepositions(image,markers,weightedaverage=False):
 
     return positions
 
-def correctmarkers(image,markers):
+def correctmarkers(image,markers,thresholdvalue):
     markerscorrection = particlesfilter(image,markers)
 
-    threshold = thresholdimage(image,bordered=False)
+    threshold = thresholdimage(image,thresholdvalue,bordered=False)
     _, thresholdcomponents = cv2.connectedComponents(threshold)
 
     imagecorrected = image*1
@@ -284,7 +284,7 @@ def correctmarkers(image,markers):
             c = foreground(np.uint8(a))
             d = cv2.dilate(np.uint8(c*markerscorrection),np.ones((3,3),np.uint8),iterations=1)
             imagecorrected[d==1] = np.max(imagecorrected)
-    markerscorrected = findparticles(imagecorrected)
+    markerscorrected = findparticles(imagecorrected,thresholdvalue)
 
     return imagecorrected, markerscorrected
 
@@ -342,9 +342,9 @@ def clusterlines(xpix,Nlines=0,linespacing=1):
     return xreal, Nlines
 
 # Fit the camera position using the projected and real positions
-def cameraposition(xprojected,xreal,H):
+def cameraposition(xprojected,xreal,H,n):
     xin = np.vstack((xprojected,H))
-    popt, pcov = optimization.curve_fit(func_flatsurf, xin, xreal)
+    popt, pcov = optimization.curve_fit(make_func_flatsurf(n), xin, xreal)
     perr = np.sqrt(np.diag(pcov))
 
     xc = [popt[0],perr[0]]
@@ -411,11 +411,14 @@ def H2Hp(H,xl,xp):
 
 
 # Function for flat surface
-def func_flatsurf(xin, xc, Hc):
-    x = xin[0,:]
-    H = xin[1,:]
-    y = x + H*(xc-x)/Hc * (1-n/np.sqrt(1+(1-n**2) * ((xc-x)/Hc)**2 ))
-    return y
+# n is a constant and is in this way passed to func_flatsurf. xc and Hc are fitting parameters in this way
+def make_func_flatsurf(n):
+    def func_flatsurf(xin, xc, Hc, n=1):
+        x = xin[0,:]
+        H = xin[1,:]
+        y = x + H*(xc-x)/Hc * (1-n/np.sqrt(1+(1-n**2) * ((xc-x)/Hc)**2 ))
+        return y
+    return func_flatsurf
 
 
 # The complicated function linking H and H' to xl and xp

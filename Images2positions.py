@@ -155,16 +155,16 @@ def main():
 
     # H = pixHlist(calBlist)[1]
 
-    xc, Hc = cameraposition(xprojected,xreal,H)
+    xc, Hc = cameraposition(xprojected,xreal,H,n)
 
     if plots:
         xin = np.vstack((xprojected,H))
-        popt, pcov = optimization.curve_fit(func_flatsurf, xin, xreal)
-        perr = np.sqrt(np.diag(pcov))
+        # popt, pcov = optimization.curve_fit(func_flatsurf, xin, xreal)
+        # perr = np.sqrt(np.diag(pcov))
 
         plt.figure(figsize=(12,8))
         plt.scatter(xprojected,xreal,label='Data')
-        plt.plot(xin[0],func_flatsurf(xin,*popt),'r-',label='Best fit')
+        # plt.plot(xin[0],make_func_flatsurf(n)(xin,*popt),'r-',label='Best fit')
         plt.xlabel('Projected x')
         plt.ylabel('Real world x')
         plt.legend()
@@ -186,7 +186,7 @@ def main():
         image = readcropimage(file,bitdepth=16,bounds=bounds)
 
         # Find markers where particles are present
-        markers = findparticles(image)
+        markers = findparticles(image,thresholdvalue)
 
         # Remove particles from image
         image_noparticles = removeparticles(image,markers)
@@ -197,7 +197,7 @@ def main():
         if verbose: print('Line positions found')
 
         # Correct for the particles that are not separated on the first try
-        imagecorrected, markerscorrected = correctmarkers(image,markers)
+        imagecorrected, markerscorrected = correctmarkers(image,markers,thresholdvalue)
 
         # Obtain the positions of the particles in pixels
         positionspix = particlepositions(imagecorrected,markerscorrected)
