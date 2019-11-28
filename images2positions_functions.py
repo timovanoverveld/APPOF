@@ -328,7 +328,7 @@ def pixrealH(file, Hlist, bounds=0, index=0, centerpx=None, linespacingpx=1):
     return xpix, Hreal
 
 #Calculate the real line coordinates by clustering the pixel values
-def clusterlines(xpix,Nlines=0):
+def clusterlines(xpix,Nlines=0,linespacing=1):
     if Nlines == 0:
         sortedgrad = np.gradient(np.sort(xpix))
         xpeaks, __ = find_peaks(sortedgrad,distance=10)

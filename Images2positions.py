@@ -151,7 +151,7 @@ def main():
 
     xpix, H  = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)#[0]
     xprojected = pix2realx(xpix)
-    xreal, Nlines = clusterlines(xpix,Nlines=Nlines)
+    xreal, Nlines = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
 
     # H = pixHlist(calBlist)[1]
 
