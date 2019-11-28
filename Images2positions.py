@@ -115,7 +115,7 @@ def main():
     # Linking the pixels to the real world coordinates, because the camera warps the image. This script gives the transformation from pixels to real world coordinates for a water height of 0.
 
     #Obtain line positions
-    xpix, Hreal = pixHlist(calAlist,bounds=bounds)
+    xpix, Hreal = pixHlist(calAlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
 
     xreal, Nlines = clusterlines(xpix)
 
@@ -149,11 +149,11 @@ def main():
     # Camera position
     # Finding the camera position by using known flat water heights.
 
-    xpix  = pixHlist(calBlist)[0]
+    xpix, H  = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)#[0]
     xprojected = pix2realx(xpix)
     xreal, Nlines = clusterlines(xpix,Nlines=Nlines)
 
-    H = pixHlist(calBlist)[1]
+    # H = pixHlist(calBlist)[1]
 
     xc, Hc = cameraposition(xprojected,xreal,H)
 
