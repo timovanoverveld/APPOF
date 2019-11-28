@@ -208,7 +208,7 @@ def main():
         xprojected = pix2realx(lines)
         xreal, Nlines = clusterlines(lines,Nlines=17)
 
-        H  = Hpolynomial(xreal,xprojected)
+        H  = Hpolynomial(xreal,xprojected,xc[0],Hc[0])
         Hp = np.polyder(H)
 
         # Convert to projected real world coordinates

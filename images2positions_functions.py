@@ -369,7 +369,7 @@ def pixrealfit(xpix, xreal, order):
 
 
 # Construct a polynomial Hpolynomial that represents the water surface shape
-def Hpolynomial(xl,xp, Hmean=0.1):
+def Hpolynomial(xl,xp,xc,Hc,Hmean=0.1):
     # Choose a set of heights, 1 value for each line on the bottom
     H  = Hmean*np.ones(np.size(xl))
 
@@ -379,7 +379,7 @@ def Hpolynomial(xl,xp, Hmean=0.1):
     #Choose an H, calculate Hpolynomial from that, and choose Hpolynomial(xw) as new value for H and repeat
     for i in range(0,maxiterations,1):
         # xw and H' are both dependent and fixed once H is chosen.
-        xw = H2xw(H,xl,xp)
+        xw = H2xw(H,xl,xp,xc,Hc)
         Hp = H2Hp(H,xl,xp)
 
         # Find H(x) by fitting
@@ -394,8 +394,8 @@ def Hpolynomial(xl,xp, Hmean=0.1):
     return Hpolynomial
 
 #Convert H to xw
-def H2xw(H,xl,xp):
-    alpha = (xc[0]-xp)/Hc[0]
+def H2xw(H,xl,xp,xc,Hc):
+    alpha = (xc-xp)/Hc
     xw = xp + alpha*H
     return xw
 
