@@ -15,17 +15,17 @@ def main():
 
     # Argument parser
     parser = argparse.ArgumentParser()
-    parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+    #parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
     parser.add_argument('-f', help="destination file")
+    parser.add_argument('-d', help="store file at given location")
     args = parser.parse_args()
 
-    if args.verbose:
-        print("verbosity turned on")
+    #if args.verbose: print("verbosity turned on")
 
     # Adjustable settings
     settings = {
         #Directories
-        'basedir' : '/PhD/Experimenten/Jeroen/26-11-2019/',
+        'basedir' : '/media/timo/Backup Plus/PhD/Experimenten/Jeroen/26-11-2019/',
         'calibrationdir' : 'Calibration/',
         'measurementdir' : 'Wave with particles/',
 
@@ -56,10 +56,15 @@ def main():
         'verbose' : True
     }
 
-    if args.f:
-        settingsfile = args.f
+    if args.d:
+        settingsfile = args.d
     else:
-        settingsfile = 'settings.txt'
+        settingsfile = ''
+
+    if args.f:
+        settingsfile += args.f
+    else:
+        settingsfile += 'settings.txt'
 
     f = open(settingsfile, 'w+')
     f.write(json.dumps(settings))
