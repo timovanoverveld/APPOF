@@ -27,7 +27,7 @@ def main():
         #Directories
         'basedir' : '/PhD/Experimenten/Jeroen/26-11-2019/',
         'calibrationdir' : 'Calibration/',
-        'measurementdir' : 'Wave with pa\rticles/',
+        'measurementdir' : 'Wave with particles/',
 
         # refraction indices
         'nair'   : 1.00027717,
