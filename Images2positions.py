@@ -123,7 +123,7 @@ def main():
     pix2realx = pixrealfit(xpix, xreal, warpingorder)
 
     # Now a similar thing for the y-coordinate, across the width of the channel
-    imagesize = np.shape(readcropimage(calAlist[0]),bounds=bounds)
+    imagesize = np.shape(readcropimage(calAlist[0],bounds=bounds))
     pix2realy = pixrealfit([0,imagesize[0]],[0,channelwidth],1)
 
     if plots:

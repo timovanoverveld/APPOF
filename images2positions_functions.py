@@ -28,7 +28,6 @@ def readcropimage(path,bounds=0,bitdepth=8):
     # Crop image
     if bounds == 0:
         bounds = np.zeros(4,dtype=int)
-    print(bounds)
     image = image[bounds[0]:-1-bounds[1],bounds[2]:-1-bounds[3]]
     return image
 
@@ -102,7 +101,6 @@ def foreground(image,dttype='L1'):
 def findlines(image, centerpx=None, binarize=False, gaussianfilter=True, linespacingpx=1):
     if centerpx == None:
         centerpx = np.zeros(2,dtype=int)
-    print(centerpx)
     # Extract part of the image, remove center for better statistics
     linearea = np.concatenate((image[0:centerpx[0],:],image[centerpx[1]:,:]))
 
