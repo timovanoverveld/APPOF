@@ -99,7 +99,10 @@ def foreground(image,dttype='L1'):
 # Object recognition #
 ######################
 
-def findlines(image, centerpx, binarize=False, gaussianfilter=True):
+def findlines(image, centerpx=None, binarize=False, gaussianfilter=True):
+    if centerpx == None:
+        centerpx = np.zeros(2,dtype=int)
+    print(centerpx)
     # Extract part of the image, remove center for better statistics
     linearea = np.concatenate((image[0:centerpx[0],:],image[centerpx[1]:,:]))
 
@@ -294,7 +297,7 @@ def correctmarkers(image,markers):
 ##########################
 
 # For all files in a list, call pixrealH and append
-def pixHlist(filelist,bounds=0):
+def pixHlist(filelist,bounds=0,centerpx=None):
     #Allocate empty arrays
     xpix  = np.empty(0,dtype=float)
     Hreal = np.empty(0,dtype=float)
@@ -302,7 +305,7 @@ def pixHlist(filelist,bounds=0):
     #Loop over files
     for file in filelist:
         # Obtain the values for a single file, single side
-        xp, Hr = pixrealH(file,bounds=bounds,index=filelist.index(file))
+        xp, Hr = pixrealH(file,bounds=bounds,index=filelist.index(file),centerpx=centerpx)
 
         # Addvalues to the lists
         xpix  = np.append(xpix, xp)
@@ -311,7 +314,7 @@ def pixHlist(filelist,bounds=0):
     return xpix, Hreal
 
 # Read lines in pixel values, construct complementary arrays of real line positions and (flat) water height
-def pixrealH(file, bounds=0, index=0):
+def pixrealH(file, bounds=0, index=0, centerpx=None):
     # Read and filter image
     image = readcropimage(file,bounds)
 
