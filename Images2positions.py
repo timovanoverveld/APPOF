@@ -45,7 +45,7 @@ def main():
     global bounds, centerpx, linespacingpx, Hlist, linespacing, n, thresholdvalue, xc, Hc
 
     # Directories
-    basedir = '/PhD/Experimenten/Jeroen/26-11-2019/'
+    basedir = 'D:/PhD/Experimenten/Jeroen/26-11-2019/'
     calibrationdir = basedir + 'Calibration/'
     measurementdir = basedir + 'Wave with particles/Meting_1/'
 
@@ -115,7 +115,7 @@ def main():
     # Linking the pixels to the real world coordinates, because the camera warps the image. This script gives the transformation from pixels to real world coordinates for a water height of 0.
 
     #Obtain line positions
-    xpix, Hreal = pixHlist(calAlist)
+    xpix, Hreal = pixHlist(calAlist,bounds=bounds)
 
     xreal, Nlines = clusterlines(xpix)
 
@@ -123,7 +123,7 @@ def main():
     pix2realx = pixrealfit(xpix, xreal, warpingorder)
 
     # Now a similar thing for the y-coordinate, across the width of the channel
-    imagesize = np.shape(readcropimage(calAlist[0]))
+    imagesize = np.shape(readcropimage(calAlist[0]),bounds=bounds)
     pix2realy = pixrealfit([0,imagesize[0]],[0,channelwidth],1)
 
     if plots:
@@ -183,7 +183,7 @@ def main():
     for file in calClist:
         if verbose: print('File',file)
 
-        image = readcropimage(file,bitdepth=16)
+        image = readcropimage(file,bitdepth=16,bounds=bounds)
 
         # Find markers where particles are present
         markers = findparticles(image)

@@ -1,23 +1,23 @@
 # Function definitions
 
 # Imports
-import argparse
+# import argparse
 import numpy as np
 import cv2
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 import scipy.optimize as optimization
 from scipy.signal import find_peaks
 from scipy import ndimage
-import os
-import fnmatch
-import json
+# import os
+# import fnmatch
+# import json
 
 ##################
 # Image handling #
 ##################
 
 # Read the image from the given path, open it and crop it.
-def readcropimage(path,bitdepth=8):
+def readcropimage(path,bounds=0,bitdepth=8):
     #Read image
     if bitdepth==8:
         image = cv2.imread(path,cv2.CV_8UC1)
@@ -26,6 +26,9 @@ def readcropimage(path,bitdepth=8):
         image = cv2.imread(path,cv2.CV_16UC1)
 
     # Crop image
+    if bounds == 0:
+        bounds = np.zeros(4,dtype=int)
+    print(bounds)
     image = image[bounds[0]:-1-bounds[1],bounds[2]:-1-bounds[3]]
     return image
 
@@ -291,7 +294,7 @@ def correctmarkers(image,markers):
 ##########################
 
 # For all files in a list, call pixrealH and append
-def pixHlist(filelist):
+def pixHlist(filelist,bounds=0):
     #Allocate empty arrays
     xpix  = np.empty(0,dtype=float)
     Hreal = np.empty(0,dtype=float)
@@ -299,7 +302,7 @@ def pixHlist(filelist):
     #Loop over files
     for file in filelist:
         # Obtain the values for a single file, single side
-        xp, Hr = pixrealH(file,filelist.index(file))
+        xp, Hr = pixrealH(file,bounds=bounds,index=filelist.index(file))
 
         # Addvalues to the lists
         xpix  = np.append(xpix, xp)
@@ -308,9 +311,9 @@ def pixHlist(filelist):
     return xpix, Hreal
 
 # Read lines in pixel values, construct complementary arrays of real line positions and (flat) water height
-def pixrealH(file, index=0):
+def pixrealH(file, bounds=0, index=0):
     # Read and filter image
-    image = readcropimage(file)
+    image = readcropimage(file,bounds)
 
     # Extract pixel values from image
     xpix = findlines(image,centerpx)
