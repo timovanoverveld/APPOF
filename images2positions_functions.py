@@ -204,7 +204,6 @@ def particlesfilter(image,markers):
 #             print(np.max(newmarkersset))
             newmarkersset[mask!=0] += np.max(newmarkersset)+1
         elif np.sum(mask) > maxpx:
-            if verbose: print('Particle',i,'too large:',np.sum(mask),'px. Will be split in probably',int(round(np.sum(mask)/meansize)),'particles.')
 
             particle = np.where(mask==1,image,0)
 

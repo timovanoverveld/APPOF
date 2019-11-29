@@ -41,9 +41,6 @@ def main():
     f = open(args.f, 'r')
     settings = json.loads(f.read())
 
-    # Set global variables, which is ugly and should be done better
-    global bounds, centerpx, linespacingpx, Hlist, linespacing, n, thresholdvalue, xc, Hc
-
     # Directories
     basedir = settings['basedir']
     calibrationdir = basedir + settings['calibrationdir']
@@ -221,6 +218,7 @@ def main():
 
         savename = file[0:-3]+'dat'
         np.savetxt(savename,positionsreal)
+        if verbose: print('Particle positions [m] stored in',savename)
 
         if plots:
             plotimage = image*1
