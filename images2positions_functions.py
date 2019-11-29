@@ -297,18 +297,24 @@ def correctmarkers(image,markers,thresholdvalue):
 
 # For all files in a list, call pixrealH and append
 def pixHlist(filelist,Hlist,bounds=0,centerpx=None,linespacingpx=10):
+    
     #Allocate empty arrays
     xpix  = np.empty(0,dtype=float)
     Hreal = np.empty(0,dtype=float)
+   
+    if np.size(filelist)>1:
+        #Loop over files
+        for file in filelist:
+            # Obtain the values for a single file
+            xp, Hr = pixrealH(file,Hlist,linespacingpx,bounds=bounds,index=filelist.index(file),centerpx=centerpx)
 
-    #Loop over files
-    for file in filelist:
-        # Obtain the values for a single file, single side
-        xp, Hr = pixrealH(file,Hlist,linespacingpx,bounds=bounds,index=filelist.index(file),centerpx=centerpx)
+            # Addvalues to the lists
+            xpix  = np.append(xpix, xp)
+            Hreal = np.append(Hreal,Hr)
 
-        # Addvalues to the lists
-        xpix  = np.append(xpix, xp)
-        Hreal = np.append(Hreal,Hr)
+    else:
+        # Obtain the values for a single file
+        xpix, Hreal = pixrealH(filelist, Hlist, linespacingpx, bounds=bounds, index=0, centerpx=centerpx)
 
     return xpix, Hreal
 
