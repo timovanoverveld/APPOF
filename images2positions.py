@@ -45,9 +45,9 @@ def main():
     global bounds, centerpx, linespacingpx, Hlist, linespacing, n, thresholdvalue, xc, Hc
 
     # Directories
-    basedir = 'D:/PhD/Experimenten/Jeroen/26-11-2019/'
-    calibrationdir = basedir + 'Calibration/'
-    measurementdir = basedir + 'Wave with particles/Meting_1/'
+    basedir = settings['basedir']#'D:/PhD/Experimenten/Jeroen/26-11-2019/'
+    calibrationdir = basedir + settings['calibrationdir']#'Calibration/'
+    measurementdir = basedir + settings['measurementdir']#'Wave with particles/Meting_1/'
 
     # refraction indices
     nair   = settings['nair']
