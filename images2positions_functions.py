@@ -328,7 +328,7 @@ def pixrealH(file, Hlist, linespacingpx, bounds=0, index=0, centerpx=None):
     return xpix, Hreal
 
 #Calculate the real line coordinates by clustering the pixel values
-def clusterlines(xpix,Nlines=0,linespacing=1):
+def clusterlines(xpix,linespacing,Nlines=0):
     if Nlines == 0:
         sortedgrad = np.gradient(np.sort(xpix))
         xpeaks, __ = find_peaks(sortedgrad,distance=10)
@@ -345,10 +345,10 @@ def clusterlines(xpix,Nlines=0,linespacing=1):
 
 # Fit the camera position using the projected and real positions
 def cameraposition(xprojected,xreal,H,n):
-    xin = np.vstack((xprojected,H))
-    popt, pcov = optimization.curve_fit(make_func_flatsurf(n), xin, xreal)
+    xin = np.vstack( (xprojected, H, n*np.ones(np.shape(H)) )) # Store xprojected, H and n as a single 'coordinate' to be passed to the fitting routine.
+    popt, pcov = optimization.curve_fit(func_flatsurf, xin, xreal)
     perr = np.sqrt(np.diag(pcov))
-
+     
     xc = [popt[0],perr[0]]
     Hc = [popt[1],perr[1]]
     return xc, Hc
@@ -414,13 +414,12 @@ def H2Hp(H,xl,xp,xc,Hc,n):
 
 # Function for flat surface
 # n is a constant and is in this way passed to func_flatsurf. xc and Hc are fitting parameters in this way
-def make_func_flatsurf(n):
-    def func_flatsurf(xin, xc, Hc, n=1):
-        x = xin[0,:]
-        H = xin[1,:]
-        y = x + H*(xc-x)/Hc * (1-n/np.sqrt(1+(1-n**2) * ((xc-x)/Hc)**2 ))
-        return y
-    return func_flatsurf
+def func_flatsurf(xin, xc, Hc):
+    x = xin[0,:]
+    H = xin[1,:]
+    n = xin[2,:] # This is ugly, but works by passing a constant n to the fitting routine as extra coordinate
+    y = x + H*(xc-x)/Hc * (1-n/np.sqrt(1+(1-n**2) * ((xc-x)/Hc)**2 ))
+    return y
 
 
 # The complicated function linking H and H' to xl and xp

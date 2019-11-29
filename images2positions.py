@@ -117,8 +117,7 @@ def main():
     #Obtain line positions
     xpix, Hreal = pixHlist(calAlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
 
-    xreal, Nlines = clusterlines(xpix)
-
+    xreal, Nlines = clusterlines(xpix,linespacing)
 
     # Fit the warping function through the data
     pix2realx = pixrealfit(xpix, xreal, warpingorder)
@@ -131,7 +130,7 @@ def main():
         plt.figure(figsize=(12,8))
         plt.scatter(xpix,xreal,marker='x',color='red',label='Data')
 
-        x = np.linspace(np.min(xpix),np.max(xpix),500)
+        x = np.linspace(0,imagesize[1],500)
         plt.plot(x,pix2realx(x),label='Best polynomial fit')
 
         plt.xlabel('Image position [px]')
@@ -155,19 +154,17 @@ def main():
     xpix, H = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
     xprojected = pix2realx(xpix)
     xreal, Nlines = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
-
-    #H = pixHlist(calBlist)[1]
-
+ 
     xc, Hc = cameraposition(xprojected,xreal,H,n)
 
     if plots:
-        xin = np.vstack((xprojected,H))
-        # popt, pcov = optimization.curve_fit(func_flatsurf, xin, xreal)
+        xin = np.vstack((xprojected,H,n*np.ones(np.shape(H))))
+        popt, pcov = optimization.curve_fit(func_flatsurf, xin, xreal)
         # perr = np.sqrt(np.diag(pcov))
 
         plt.figure(figsize=(12,8))
         plt.scatter(xprojected,xreal,label='Data')
-        # plt.plot(xin[0],make_func_flatsurf(n)(xin,*popt),'r-',label='Best fit')
+        plt.plot(xin[0],func_flatsurf(xin,xc[0],Hc[0]),'r-',label='Best fit')
         plt.xlabel('Projected x')
         plt.ylabel('Real world x')
         plt.legend()
@@ -212,7 +209,7 @@ def main():
 
         # Obtain water surface shape
         xprojected = pix2realx(lines)
-        xreal, Nlines = clusterlines(lines,Nlines=17)
+        xreal, Nlines = clusterlines(lines,linespacing,Nlines=17)
 
         H  = Hpolynomial(xreal,xprojected,xc[0],Hc[0],n)
         Hp = np.polyder(H)
