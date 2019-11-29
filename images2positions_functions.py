@@ -4,7 +4,7 @@
 # import argparse
 import numpy as np
 import cv2
-# from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt
 import scipy.optimize as optimization
 from scipy.signal import find_peaks
 from scipy import ndimage
@@ -98,7 +98,7 @@ def foreground(image,dttype='L1'):
 # Object recognition #
 ######################
 
-def findlines(image, centerpx=None, binarize=False, gaussianfilter=True, linespacingpx=1):
+def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilter=True):
     if centerpx == None:
         centerpx = np.zeros(2,dtype=int)
     # Extract part of the image, remove center for better statistics
@@ -124,7 +124,7 @@ def findlines(image, centerpx=None, binarize=False, gaussianfilter=True, linespa
 
     # Fit lines with a fixed minimum separation distance
     lines, _ = find_peaks(averages, distance=linespacingpx)
-
+    
     return lines
 
 
@@ -295,7 +295,7 @@ def correctmarkers(image,markers,thresholdvalue):
 ##########################
 
 # For all files in a list, call pixrealH and append
-def pixHlist(filelist,Hlist,bounds=0,centerpx=None,linespacingpx=1):
+def pixHlist(filelist,Hlist,bounds=0,centerpx=None,linespacingpx=10):
     #Allocate empty arrays
     xpix  = np.empty(0,dtype=float)
     Hreal = np.empty(0,dtype=float)
@@ -303,7 +303,7 @@ def pixHlist(filelist,Hlist,bounds=0,centerpx=None,linespacingpx=1):
     #Loop over files
     for file in filelist:
         # Obtain the values for a single file, single side
-        xp, Hr = pixrealH(file,Hlist,bounds=bounds,index=filelist.index(file),centerpx=centerpx,linespacingpx=1)
+        xp, Hr = pixrealH(file,Hlist,linespacingpx,bounds=bounds,index=filelist.index(file),centerpx=centerpx)
 
         # Addvalues to the lists
         xpix  = np.append(xpix, xp)
@@ -312,12 +312,12 @@ def pixHlist(filelist,Hlist,bounds=0,centerpx=None,linespacingpx=1):
     return xpix, Hreal
 
 # Read lines in pixel values, construct complementary arrays of real line positions and (flat) water height
-def pixrealH(file, Hlist, bounds=0, index=0, centerpx=None, linespacingpx=1):
+def pixrealH(file, Hlist, linespacingpx, bounds=0, index=0, centerpx=None):
     # Read and filter image
     image = readcropimage(file,bounds)
 
     # Extract pixel values from image
-    xpix = findlines(image,centerpx,linespacingpx=linespacingpx)
+    xpix = findlines(image,linespacingpx,centerpx)
 
     # Water height per found line
     H  = Hlist[index]

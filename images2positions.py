@@ -45,9 +45,9 @@ def main():
     global bounds, centerpx, linespacingpx, Hlist, linespacing, n, thresholdvalue, xc, Hc
 
     # Directories
-    basedir = settings['basedir']#'D:/PhD/Experimenten/Jeroen/26-11-2019/'
-    calibrationdir = basedir + settings['calibrationdir']#'Calibration/'
-    measurementdir = basedir + settings['measurementdir']#'Wave with particles/Meting_1/'
+    basedir = settings['basedir']
+    calibrationdir = basedir + settings['calibrationdir']
+    measurementdir = basedir + settings['measurementdir']
 
     # refraction indices
     nair   = settings['nair']
@@ -119,6 +119,7 @@ def main():
 
     xreal, Nlines = clusterlines(xpix)
 
+
     # Fit the warping function through the data
     pix2realx = pixrealfit(xpix, xreal, warpingorder)
 
@@ -149,11 +150,11 @@ def main():
     # Camera position
     # Finding the camera position by using known flat water heights.
 
-    xpix, H  = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)#[0]
+    xpix = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)[0]
     xprojected = pix2realx(xpix)
     xreal, Nlines = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
 
-    # H = pixHlist(calBlist)[1]
+    H = pixHlist(calBlist)[1]
 
     xc, Hc = cameraposition(xprojected,xreal,H,n)
 
