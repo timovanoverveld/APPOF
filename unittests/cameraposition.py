@@ -18,10 +18,14 @@ from images2positions_functions import *
 class TestCalibration(unittest.TestCase):
 
     def test_cameraposition(self):
+        datadir = '../data/'
+        settingsfile = datadir+'settings_cameraposition.txt' 
+
         # Reading settings file
-        f = open('settings_cameraposition.txt', 'r')
+        f = open(settingsfile, 'r')
         settings = json.loads(f.read())
-       
+        f.close()
+
         # Check if settings exists
         self.assertTrue(settings)
 
@@ -45,10 +49,10 @@ class TestCalibration(unittest.TestCase):
 
         ################################### 
         # Warping
-        calAlist = 'H0.tif' 
+        calAlist = datadir+'H0.tif' 
 
         # Camera position
-        calBlist = ['H0.tif','H7.tif']
+        calBlist = [datadir+'H0.tif',datadir+'H7.tif']
    
         Hlist = np.asarray([0,7])
         #############################################
