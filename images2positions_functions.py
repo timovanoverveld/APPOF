@@ -28,6 +28,7 @@ def readcropimage(path,bounds=0,bitdepth=8):
     # Crop image
     if bounds == 0:
         bounds = np.zeros(4,dtype=int)
+    
     image = image[bounds[0]:-1-bounds[1],bounds[2]:-1-bounds[3]]
     return image
 
@@ -101,6 +102,7 @@ def foreground(image,dttype='L1'):
 def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilter=True):
     if centerpx == None:
         centerpx = np.zeros(2,dtype=int)
+
     # Extract part of the image, remove center for better statistics
     linearea = np.concatenate((image[0:centerpx[0],:],image[centerpx[1]:,:]))
 
@@ -121,7 +123,7 @@ def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilte
 
     if gaussianfilter == True:
         averages = ndimage.gaussian_filter1d(averages,sigma=1)
-
+    
     # Fit lines with a fixed minimum separation distance
     lines, _ = find_peaks(averages, distance=linespacingpx)
     
@@ -317,7 +319,7 @@ def pixrealH(file, Hlist, linespacingpx, bounds=0, index=0, centerpx=None):
     image = readcropimage(file,bounds)
 
     # Extract pixel values from image
-    xpix = findlines(image,linespacingpx,centerpx)
+    xpix = findlines(image,linespacingpx,centerpx=centerpx)
 
     # Water height per found line
     H  = Hlist[index]
@@ -369,7 +371,7 @@ def pixrealfit(xpix, xreal, order):
 
 
 # Construct a polynomial Hpolynomial that represents the water surface shape
-def Hpolynomial(xl,xp,xc,Hc,Hmean=0.1):
+def Hpolynomial(xl,xp,xc,Hc,n,Hmean=0.1):
     # Choose a set of heights, 1 value for each line on the bottom
     H  = Hmean*np.ones(np.size(xl))
 
@@ -380,7 +382,7 @@ def Hpolynomial(xl,xp,xc,Hc,Hmean=0.1):
     for i in range(0,maxiterations,1):
         # xw and H' are both dependent and fixed once H is chosen.
         xw = H2xw(H,xl,xp,xc,Hc)
-        Hp = H2Hp(H,xl,xp)
+        Hp = H2Hp(H,xl,xp,xc,Hc,n)
 
         # Find H(x) by fitting
         Hpolynomial = fitH(xw,H,Hp)
@@ -400,11 +402,11 @@ def H2xw(H,xl,xp,xc,Hc):
     return xw
 
 # Convert H to H'
-def H2Hp(H,xl,xp):
+def H2Hp(H,xl,xp,xc,Hc,n):
     Hp = np.empty(np.size(H),dtype=float)
     for i in range(0,np.size(Hp),1):
         # Creating 3 valued input data: (H,xl,xp)
-        data = (H[i],xl[i],xp[i])
+        data = (H[i],xl[i],xp[i],xc,Hc,n)
         solution = optimization.root(F,0.0,args=data,tol=1e-6)
         Hp[i] = solution.x
     return Hp
@@ -423,8 +425,8 @@ def make_func_flatsurf(n):
 
 # The complicated function linking H and H' to xl and xp
 def F(Hp,*data):
-    H, xl, xp = data
-    alpha = (xc[0]-xp)/Hc[0]
+    H, xl, xp, xc, Hc, n = data
+    alpha = (xc-xp)/Hc
     A = (   n*(Hp+alpha) - Hp*np.sqrt((Hp**2+1)*(alpha**2+1)-n**2*(Hp+alpha)**2))
     B = (Hp*n*(Hp+alpha) +    np.sqrt((Hp**2+1)*(alpha**2+1)-n**2*(Hp+alpha)**2))
     f = (xp-xl) + H * (alpha - A/B)
@@ -456,27 +458,27 @@ def fitH(xw,H,Hp,order=5):
     return polynomial
 
 # Calculate xreal based on H (polynomial function) and xprojected (discrete data)
-def projected2real(xp,H,Hp):
+def projected2real(xp,H,Hp,xc,Hc,n):
     #Calculate intersection point
-    data = (xp,H)
+    data = (xp,H,xc,Hc)
     xw = optimization.root(intersection,xp,args=data)
     xw = xw.x
 
     #Calculate real positions
     Hxw  = H(xw)
     Hpxw = Hp(xw)
-    xreal = xprojected2xreal(xp,Hxw,Hpxw)
+    xreal = xprojected2xreal(xp,Hxw,Hpxw,xc,Hc,n)
     return xreal
 
 # Calculate the root, which corresponds to the intersection point of sightline and water surface
 def intersection(x,*data):
-    xp, H = data
-    f = H(x) - Hc[0]/(xc[0]-xp)*(x-xp)
+    xp, H, xc, Hc = data
+    f = H(x) - Hc/(xc-xp)*(x-xp)
     return f
 
 # Computing xreal based on xprojected, H(xw) and H'(xw)
-def xprojected2xreal(xp,H,Hp):
-    alpha = (xc[0]-xp)/Hc[0]
+def xprojected2xreal(xp,H,Hp,xc,Hc,n):
+    alpha = (xc-xp)/Hc
     A = (   n*(Hp+alpha) - Hp*np.sqrt((Hp**2+1)*(alpha**2+1)-n**2*(Hp+alpha)**2))
     B = (Hp*n*(Hp+alpha) +    np.sqrt((Hp**2+1)*(alpha**2+1)-n**2*(Hp+alpha)**2))
     xreal = xp + H * (alpha - A/B)

@@ -138,11 +138,13 @@ def main():
         plt.ylabel('Real position [m]')
         plt.grid()
         plt.legend()
-        plt.show()
+        plt.draw()
+        plt.waitforbuttonpress(0)
+        plt.close()
 
     if verbose:
         print('Camera warping mapped')
-        print('Along channel (x):',    pix2realx)
+        print('Along channel (x):\n',    pix2realx)
         print('Across channel (y):',    pix2realy)
 
     ###########################
@@ -150,11 +152,11 @@ def main():
     # Camera position
     # Finding the camera position by using known flat water heights.
 
-    xpix = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)[0]
+    xpix, H = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
     xprojected = pix2realx(xpix)
     xreal, Nlines = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
 
-    H = pixHlist(calBlist)[1]
+    #H = pixHlist(calBlist)[1]
 
     xc, Hc = cameraposition(xprojected,xreal,H,n)
 
@@ -170,9 +172,12 @@ def main():
         plt.ylabel('Real world x')
         plt.legend()
         plt.grid()
-        plt.show()
+        plt.draw()
+        plt.waitforbuttonpress(0)
+        plt.close()
 
     if verbose:
+        print('Camera position')
         print('xc = ',format(xc[0],'.3f'), '+-',format(xc[1],'.3f')+' m')
         print('Hc = ',format(Hc[0],'.3f'), '+-',format(Hc[1],'.3f')+' m')
 
@@ -193,7 +198,7 @@ def main():
         image_noparticles = removeparticles(image,markers)
 
         # Find lines in pixel values
-        lines = findlines(np.uint8(image_noparticles/16),centerpx)
+        lines = findlines(np.uint8(image_noparticles/16),linespacingpx,centerpx)
 
         if verbose: print('Line positions found')
 
@@ -209,13 +214,13 @@ def main():
         xprojected = pix2realx(lines)
         xreal, Nlines = clusterlines(lines,Nlines=17)
 
-        H  = Hpolynomial(xreal,xprojected,xc[0],Hc[0])
+        H  = Hpolynomial(xreal,xprojected,xc[0],Hc[0],n)
         Hp = np.polyder(H)
 
         # Convert to projected real world coordinates
         positions = np.asarray([pix2realx(positionspix[:,0]),pix2realy(positionspix[:,1])])
         # Convert to real real world coordinates (only for x-coordinates; the y-coordinates are not (yet) corrected)
-        positionsreal = np.asarray([projected2real(positions[0,:],H,Hp),positions[1,:]])
+        positionsreal = np.asarray([projected2real(positions[0,:],H,Hp,xc[0],Hc[0],n),positions[1,:]])
 
         savename = file[0:-3]+'dat'
         np.savetxt(savename,positionsreal)
@@ -229,14 +234,18 @@ def main():
             for i in lines:
                 plt.axvline(i,linewidth=1,color='red')
             plt.scatter(positionspix[:,0],positionspix[:,1],color='red',marker='x',s=5)
-            plt.show()
+            plt.draw()
+            plt.waitforbuttonpress(0)
+            plt.close()
 
             plt.figure(figsize=(12,8))
             plt.scatter(xprojected,0*xprojected,color='blue')
             plt.scatter(xreal,0*xreal,color='red')
             x = np.linspace(0,0.4,100)
             plt.fill_between(x,0,H(x),color='blue',alpha=0.1)
-            plt.show()
+            plt.draw()
+            plt.waitforbuttonpress(0)
+            plt.close()
 
             # Compare images
             plt.figure(figsize=(12,8))
@@ -248,7 +257,9 @@ def main():
             plt.fill_between([0,np.max(positions[0,:])],0,-0.01,color='gray')
     #         plt.axes().set_aspect('equal')
             plt.legend()
-            plt.show()
+            plt.draw()
+            plt.waitforbuttonpress(0)
+            plt.close()
 
 
 if __name__ == "__main__":
