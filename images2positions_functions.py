@@ -372,6 +372,8 @@ def pixrealfit(xpix, xreal, order):
     z = np.polyfit(xpix,xreal,order)
     pix2real = np.poly1d(z)
 
+    #TODO Instead of polynomial fitting, fit a Fourier series (sines) through the data    
+
     return pix2real
 
 

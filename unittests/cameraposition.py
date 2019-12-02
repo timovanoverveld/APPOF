@@ -32,7 +32,7 @@ class TestCalibration(unittest.TestCase):
 
         # Check if settings exists
         self.assertTrue(settings)
-
+        
         # refraction indices
         nair   = settings['nair']
         nwater = settings['nwater']
