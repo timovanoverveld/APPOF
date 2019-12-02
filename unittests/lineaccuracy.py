@@ -178,23 +178,35 @@ def find_lineaccuracy():
         H  = Hpolynomial(xreal,xprojected,xc[0],Hc[0],n)
         Hp = np.polyder(H)
 
+        # Look only at the even lines (0,2,4...)
+        linesoddreal = xreal[0::2]
+        linesoddproj = xprojected[0::2]
+        
+        print(linesoddreal,linesoddproj)
+
+        H  = Hpolynomial(linesoddreal,linesoddproj,xc[0],Hc[0],n)
+        Hp = np.polyder(H)
+
+
+        
+
         if plots:
-            plt.figure(figsize=(20,20))
+            plt.figure(figsize=(12,8))
             plt.imshow(image,origin='low')
-            for i in lines:
+            for i in lines[0::2]:
                 plt.axvline(i,linewidth=1,color='red')
             plt.draw()
             plt.waitforbuttonpress(0)
             plt.close()
 
-            plt.figure(figsize=(12,8))
-            plt.scatter(xprojected,0*xprojected,color='blue')
-            plt.scatter(xreal,0*xreal,color='red')
-            x = np.linspace(0,0.4,100)
-            plt.fill_between(x,0,H(x),color='blue',alpha=0.1)
-            plt.draw()
-            plt.waitforbuttonpress(0)
-            plt.close()
+            #plt.figure(figsize=(12,8))
+            #plt.scatter(xprojected,0*xprojected,color='blue')
+            #plt.scatter(xreal,0*xreal,color='red')
+            #x = np.linspace(0,0.4,100)
+            #plt.fill_between(x,0,H(x),color='blue',alpha=0.1)
+            #plt.draw()
+            #plt.waitforbuttonpress(0)
+            #plt.close()
 
 if __name__ == "__main__":
     find_lineaccuracy()
