@@ -7,10 +7,13 @@
 # Input: settings_cameraposition.txt, H0.tif, H7.tif
 # Output: Camera position
 
+# Important, this file can currently only be run from within the main APPOF directory.
+
 # Imports
 import numpy as np
 import json
 import unittest
+import os
 from images2positions_functions import *
 
 ############################################################################
@@ -18,9 +21,10 @@ from images2positions_functions import *
 class TestCalibration(unittest.TestCase):
 
     def test_cameraposition(self):
-        datadir = '../data/'
+        APPOFdir = os.path.abspath(os.getcwd()) 
+        datadir = APPOFdir+'/data/'
         settingsfile = datadir+'settings_cameraposition.txt' 
-
+        
         # Reading settings file
         f = open(settingsfile, 'r')
         settings = json.loads(f.read())
