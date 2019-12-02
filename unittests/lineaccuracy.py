@@ -191,9 +191,11 @@ def find_lineaccuracy():
         linesoddproj = xprojected[1::2] #Position obtained from image
         linesreconstructed = projected2real(linesoddproj,H,Hp,xc[0],Hc[0],n) #Position reconstructed from other lines
       
-        #
+        # Approximate the odd line positions by linear interpolation (li) of neighbouring lines
+        lines_li = (linesevenproj[0:-1]+linesevenproj[1:])/2
 
-
+        #TODO last value is wrong!
+        lines_li = np.append(lines_li,0.4)
 
         # Errors reconstructed lines
         abserror_rs = abs(linesreconstructed-linesoddreal)
@@ -203,12 +205,19 @@ def find_lineaccuracy():
         abserror_pr = abs(linesoddproj-linesoddreal)
         relerror_pr = abs(linesoddproj-linesoddreal)/linesoddreal
 
+        # Errors linearly interpolated lines
+        abserror_li = abs(lines_li-linesoddreal)
+        relerror_li = abs(lines_li-linesoddreal)/linesoddreal
+
+
         # Optional, print errors
         if verbose:
             print('Real line position\n',linesoddreal)
             print('Reconstructed lines position\n',linesreconstructed)
-            print('Relative error\n',relerror_rs)
-            print('Maximum error=\n',max(abserror_rs),'(abs)',max(relerror_rs),'(rel)')
+            print('Interpolated lines position\n',lines_li)
+             
+            #print('Relative error\n',relerror_rs)
+            #print('Maximum error=\n',max(abserror_rs),'(abs)',max(relerror_rs),'(rel)')
 
         if plots:
             #plt.figure(figsize=(12,8))
@@ -222,7 +231,8 @@ def find_lineaccuracy():
 
             plt.figure(figsize=(12,8))
             plt.semilogy(range(0,np.size(relerror_rs),1),relerror_rs,'x',label='reconstructed')
-            plt.semilogy(range(0,np.size(relerror_pr),1),relerror_pr,'x',label='projectedlines')
+            plt.semilogy(range(0,np.size(relerror_pr),1),relerror_pr,'x',label='projected')
+            plt.semilogy(range(0,np.size(relerror_li),1),relerror_li,'x',label='interpolated')
             plt.legend()
             plt.draw()
             plt.waitforbuttonpress(0)
