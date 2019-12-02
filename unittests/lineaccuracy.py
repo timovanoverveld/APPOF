@@ -179,34 +179,50 @@ def find_lineaccuracy():
         Hp = np.polyder(H)
 
         # Look only at the even lines (0,2,4...)
-        linesoddreal = xreal[0::2]
-        linesoddproj = xprojected[0::2]
+        linesevenreal = xreal[0::2]
+        linesevenproj = xprojected[0::2]
         
-        print(linesoddreal,linesoddproj)
-
-        H  = Hpolynomial(linesoddreal,linesoddproj,xc[0],Hc[0],n)
+        # Construct water height based on even lines
+        H  = Hpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n)
         Hp = np.polyder(H)
 
-
+        # Use H to calculate the real position of the odd projected lines:
+        linesoddreal = xreal[1::2] #Position it should be ('exact')
+        linesoddproj = xprojected[1::2] #Position obtained from image
+        linesreconstructed = projected2real(linesoddproj,H,Hp,xc[0],Hc[0],n) #Position reconstructed from other lines
         
+        abserror = abs(linesreconstructed-linesoddreal)
+        relerror = abs(linesreconstructed-linesoddreal)/linesoddreal 
+
+        # Optional, print errors
+        if verbose:
+            print('Real line position\n',linesoddreal)
+            print('Reconstructed lines position\n',linesreconstructed)
+            print('Relative error\n',relerror)
+            print('Maximum error=\n',max(abserror),'(abs)',max(relerror),'(rel)')
 
         if plots:
+#            plt.figure(figsize=(12,8))
+#            plt.imshow(image,origin='low')
+#            for i in lines[0::2]:
+#                plt.axvline(i,linewidth=1,color='red')
+#            plt.draw()
+#            plt.waitforbuttonpress(0)
+#            plt.close()
+
+
             plt.figure(figsize=(12,8))
-            plt.imshow(image,origin='low')
-            for i in lines[0::2]:
-                plt.axvline(i,linewidth=1,color='red')
+            plt.scatter(range(0,np.size(relerror),1),relerror)
+            
+            #plt.scatter(linesevenreal,linesevenproj,color='blue')
+           
+            #x = np.linspace(0,0.4,100)
+            #plt.plot(x,projected2real(x,H,Hp,xc[0],Hc[0],n),color='blue',alpha=0.1)
+            
+            #plt.scatter(linesoddreal,linesoddproj,color='red')
             plt.draw()
             plt.waitforbuttonpress(0)
             plt.close()
-
-            #plt.figure(figsize=(12,8))
-            #plt.scatter(xprojected,0*xprojected,color='blue')
-            #plt.scatter(xreal,0*xreal,color='red')
-            #x = np.linspace(0,0.4,100)
-            #plt.fill_between(x,0,H(x),color='blue',alpha=0.1)
-            #plt.draw()
-            #plt.waitforbuttonpress(0)
-            #plt.close()
 
 if __name__ == "__main__":
     find_lineaccuracy()
