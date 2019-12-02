@@ -190,36 +190,40 @@ def find_lineaccuracy():
         linesoddreal = xreal[1::2] #Position it should be ('exact')
         linesoddproj = xprojected[1::2] #Position obtained from image
         linesreconstructed = projected2real(linesoddproj,H,Hp,xc[0],Hc[0],n) #Position reconstructed from other lines
+      
+        #
+
+
+
+        # Errors reconstructed lines
+        abserror_rs = abs(linesreconstructed-linesoddreal)
+        relerror_rs = abs(linesreconstructed-linesoddreal)/linesoddreal 
         
-        abserror = abs(linesreconstructed-linesoddreal)
-        relerror = abs(linesreconstructed-linesoddreal)/linesoddreal 
+        # Errors projected lines without reconstruction (projected2real)
+        abserror_pr = abs(linesoddproj-linesoddreal)
+        relerror_pr = abs(linesoddproj-linesoddreal)/linesoddreal
 
         # Optional, print errors
         if verbose:
             print('Real line position\n',linesoddreal)
             print('Reconstructed lines position\n',linesreconstructed)
-            print('Relative error\n',relerror)
-            print('Maximum error=\n',max(abserror),'(abs)',max(relerror),'(rel)')
+            print('Relative error\n',relerror_rs)
+            print('Maximum error=\n',max(abserror_rs),'(abs)',max(relerror_rs),'(rel)')
 
         if plots:
-#            plt.figure(figsize=(12,8))
-#            plt.imshow(image,origin='low')
-#            for i in lines[0::2]:
-#                plt.axvline(i,linewidth=1,color='red')
-#            plt.draw()
-#            plt.waitforbuttonpress(0)
-#            plt.close()
-
+            #plt.figure(figsize=(12,8))
+            #plt.plot(range(0,np.size(linesoddreal),1),(linesoddproj-0.025)%0.05,'x',label='observed position')
+            #plt.plot(range(0,np.size(linesoddreal),1),(linesreconstructed-0.025)%0.05,'x',label='corrected position')
+            #plt.plot(range(0,np.size(linesoddreal),1),(linesoddreal-0.025)%0.05,'x',label='actual position')
+            #plt.legend()
+            #plt.draw()
+            #plt.waitforbuttonpress(0)
+            #plt.close()
 
             plt.figure(figsize=(12,8))
-            plt.scatter(range(0,np.size(relerror),1),relerror)
-            
-            #plt.scatter(linesevenreal,linesevenproj,color='blue')
-           
-            #x = np.linspace(0,0.4,100)
-            #plt.plot(x,projected2real(x,H,Hp,xc[0],Hc[0],n),color='blue',alpha=0.1)
-            
-            #plt.scatter(linesoddreal,linesoddproj,color='red')
+            plt.semilogy(range(0,np.size(relerror_rs),1),relerror_rs,'x',label='reconstructed')
+            plt.semilogy(range(0,np.size(relerror_pr),1),relerror_pr,'x',label='projectedlines')
+            plt.legend()
             plt.draw()
             plt.waitforbuttonpress(0)
             plt.close()
