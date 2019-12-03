@@ -378,11 +378,11 @@ def pixrealfit(xpix, xreal, order):
 
 
 # Construct a polynomial Hpolynomial that represents the water surface shape
-def Hpolynomial(xl,xp,xc,Hc,n,Hmean=0.1):
+def fitHpolynomial(xl,xp,xc,Hc,n,order,Hmean=0.1):
     # Choose a set of heights, 1 value for each line on the bottom
     H  = Hmean*np.ones(np.size(xl))
 
-    maxiterations = 5
+    maxiterations = 20
     tolerance = 1e-8
 
     #Choose an H, calculate Hpolynomial from that, and choose Hpolynomial(xw) as new value for H and repeat
@@ -392,8 +392,8 @@ def Hpolynomial(xl,xp,xc,Hc,n,Hmean=0.1):
         Hp = H2Hp(H,xl,xp,xc,Hc,n)
 
         # Find H(x) by fitting
-        Hpolynomial = fitH(xw,H,Hp)
-
+        Hpolynomial = fitH(xw,H,Hp,order)
+        
         difference = abs(Hpolynomial(xw)-H)
         if np.all(difference <= tolerance):
             break
@@ -440,7 +440,7 @@ def F(Hp,*data):
 
 
 # With the info on xw, H and H', fit a polynomial of arbitrary order through them
-def fitH(xw,H,Hp,order=5):
+def fitH(xw,H,Hp,order):
     N = np.size(H) # Number of lines
 
     #Left hand side (matrix A)
@@ -460,7 +460,6 @@ def fitH(xw,H,Hp,order=5):
     # solution = np.linalg.solve(A,b)
     coeffs = np.linalg.lstsq(A,b,rcond=None) #rcond just to silence a FutureWarning
     polynomial = np.poly1d(coeffs[0])
-
     return polynomial
 
 # Calculate xreal based on H (polynomial function) and xprojected (discrete data)

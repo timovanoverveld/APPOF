@@ -171,26 +171,42 @@ def find_lineaccuracy():
 
         if verbose: print('Line positions found')
 
-        # Obtain water surface shape
+        # Obtain all information on the lines
         xprojected = pix2realx(lines)
         xreal, Nlines = clusterlines(lines,linespacing,Nlines=17)
-
-        H  = Hpolynomial(xreal,xprojected,xc[0],Hc[0],n)
-        Hp = np.polyder(H)
 
         # Look only at the even lines (0,2,4...)
         linesevenreal = xreal[0::2]
         linesevenproj = xprojected[0::2]
         
-        # Construct water height based on even lines
-        H  = Hpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n)
+        # Loop to find best order for the fit
+        maximumerror = [0,1]
+        for j in range(1,Nlines*2,1):
+            surfaceshapeorder = j
+            # Construct water height based on even lines
+            H  = fitHpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n,surfaceshapeorder)
+            Hp = np.polyder(H)
+
+            # Use H to calculate the real position of the odd projected lines:
+            linesoddreal = xreal[1::2] #Position it should be ('exact')
+            linesoddproj = xprojected[1::2] #Position obtained from image
+            linesreconstructed = projected2real(linesoddproj,H,Hp,xc[0],Hc[0],n) #Position reconstructed from other lines
+        
+            relerror_rs = abs(linesreconstructed-linesoddreal)/linespacing
+            errorsum = np.mean(relerror_rs)
+            if errorsum < maximumerror[1]:
+                maximumerror = [j,errorsum] 
+
+        
+        H  = fitHpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n,maximumerror[0])
         Hp = np.polyder(H)
 
         # Use H to calculate the real position of the odd projected lines:
         linesoddreal = xreal[1::2] #Position it should be ('exact')
         linesoddproj = xprojected[1::2] #Position obtained from image
         linesreconstructed = projected2real(linesoddproj,H,Hp,xc[0],Hc[0],n) #Position reconstructed from other lines
-      
+    
+
         # Approximate the odd line positions by linear interpolation (li) of neighbouring lines
         #lines_li = (linesevenproj[0:-1]+linesevenproj[1:])/2
         # This was faulty, because it assumed the other line to be in between the other lines. The infromation stored in xprojected is in fact available from the image, so predict the line in the center.
