@@ -194,8 +194,8 @@ def find_lineaccuracy():
         # Approximate the odd line positions by linear interpolation (li) of neighbouring lines
         lines_li = (linesevenproj[0:-1]+linesevenproj[1:])/2
 
-        #TODO last value is wrong!
-        lines_li = np.append(lines_li,0.4)
+        #TODO last value is wrong for now! Fix by choosing correct line
+        #lines_li = np.append(lines_li,0.4)
 
         # Errors reconstructed lines
         abserror_rs = abs(linesreconstructed-linesoddreal)
@@ -213,6 +213,7 @@ def find_lineaccuracy():
         # Optional, print errors
         if verbose:
             print('Real line position\n',linesoddreal)
+            print('Projected line position\n',linesoddproj) 
             print('Reconstructed lines position\n',linesreconstructed)
             print('Interpolated lines position\n',lines_li)
              
@@ -220,19 +221,20 @@ def find_lineaccuracy():
             #print('Maximum error=\n',max(abserror_rs),'(abs)',max(relerror_rs),'(rel)')
 
         if plots:
-            #plt.figure(figsize=(12,8))
-            #plt.plot(range(0,np.size(linesoddreal),1),(linesoddproj-0.025)%0.05,'x',label='observed position')
-            #plt.plot(range(0,np.size(linesoddreal),1),(linesreconstructed-0.025)%0.05,'x',label='corrected position')
-            #plt.plot(range(0,np.size(linesoddreal),1),(linesoddreal-0.025)%0.05,'x',label='actual position')
-            #plt.legend()
-            #plt.draw()
-            #plt.waitforbuttonpress(0)
-            #plt.close()
-
             plt.figure(figsize=(12,8))
-            plt.semilogy(range(0,np.size(relerror_rs),1),relerror_rs,'x',label='reconstructed')
-            plt.semilogy(range(0,np.size(relerror_pr),1),relerror_pr,'x',label='projected')
-            plt.semilogy(range(0,np.size(relerror_li),1),relerror_li,'x',label='interpolated')
+            for i in range(0,np.size(linesoddreal),1):
+                if i == 0:
+                    plt.axvline(linesevenreal[i],linestyle='--',color='r',label='reference lines')
+                    plt.axvline(linesoddreal[i],linestyle=':',color='k',label='real position')
+                else:
+                    plt.axvline(linesoddreal[i],linestyle=':',color='k')
+                    plt.axvline(linesevenreal[i],linestyle='--',color='r')
+
+            plt.semilogy(linesreconstructed,relerror_rs,'o',label='reconstructed')
+            plt.semilogy(linesoddproj      ,relerror_pr,'^',label='projected')
+            plt.semilogy(lines_li          ,relerror_li,'s',label='interpolated')
+            plt.xlabel('Position along channel [m]')
+            plt.ylabel('Relative error [-]')
             plt.legend()
             plt.draw()
             plt.waitforbuttonpress(0)
