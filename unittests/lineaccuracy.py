@@ -192,11 +192,24 @@ def find_lineaccuracy():
         linesreconstructed = projected2real(linesoddproj,H,Hp,xc[0],Hc[0],n) #Position reconstructed from other lines
       
         # Approximate the odd line positions by linear interpolation (li) of neighbouring lines
-        lines_li = (linesevenproj[0:-1]+linesevenproj[1:])/2
-
-        #TODO last value is wrong for now! Fix by choosing correct line
-        #lines_li = np.append(lines_li,0.4)
-
+        #lines_li = (linesevenproj[0:-1]+linesevenproj[1:])/2
+        # This was faulty, because it assumed the other line to be in between the other lines. The infromation stored in xprojected is in fact available from the image, so predict the line in the center.
+        # Index to which line it belongs
+        lines_li = np.empty(0,dtype=float) 
+        for i in range(0,np.size(xreal),1):
+            if xreal[i] in linesevenreal:
+                # Line is known
+                pass
+            else:
+                # Line unknown, find which 2 known lines are closest
+                id1,id2 = np.argsort(abs(xreal[i]-linesevenreal))[0:2] # Known lines
+                id1 = np.argwhere(linesevenreal[id1]==xreal)[0][0] # Convert to all idx of all lines
+                id2 = np.argwhere(linesevenreal[id2]==xreal)[0][0]
+                # Now use id1 and id2 to inter/extrapolate to i
+                #y = xreal, x = xprojected. 3 xprojected are known
+                lineinter = (xreal[id2]-xreal[id1])/(xprojected[id2]-xprojected[id1])*(xprojected[i]-xprojected[id1])+xreal[id1]
+                lines_li = np.append(lines_li,lineinter)
+        
         # Errors reconstructed lines
         abserror_rs = abs(linesreconstructed-linesoddreal)
         relerror_rs = abs(linesreconstructed-linesoddreal)/linespacing
