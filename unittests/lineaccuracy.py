@@ -17,7 +17,7 @@ from images2positions_functions import *
 
 
 ############################################################################
-def find_lineaccuracy(lineidx,iterate_order=-1):
+def find_lineaccuracy(lineidx,iterate_order=-1,poldegree=1,verbose=False,data=False):
      
     # Reading settings file
     settingsfile = os.path.abspath(os.getcwd())+'/data/settings_lineaccuracy.txt'
@@ -54,9 +54,9 @@ def find_lineaccuracy(lineidx,iterate_order=-1):
     warpingorder = settings['warpingorder']
     surfaceshapeorder = settings['surfaceshapeorder']
 
-    plots   = True#settings['plots']
+    plots   = settings['plots']
 
-    verbose = settings['verbose']
+    if verbose == False: verbose = settings['verbose']
 
     if verbose: print('Constants read')
 
@@ -160,6 +160,8 @@ def find_lineaccuracy(lineidx,iterate_order=-1):
     #################################
 
     # Surface shape
+    if data:
+        dataarray = np.empty((4,0),dtype=float)
 
     # Open image
     for file in calClist:
@@ -230,13 +232,22 @@ def find_lineaccuracy(lineidx,iterate_order=-1):
                 pass
             else:
                 # Line unknown, find which 2 known lines are closest
-                id1,id2 = np.argsort(abs(xreal[i]-linesevenreal))[0:2] # Known lines
-                id1 = np.argwhere(linesevenreal[id1]==xreal)[0][0] # Convert to all idx of all lines
-                id2 = np.argwhere(linesevenreal[id2]==xreal)[0][0]
+                #id1, id2 = np.argsort(abs(xreal[i]-linesevenreal))[0:2] # Known lines
+                #id1 = np.argwhere(linesevenreal[id1]==xreal)[0][0] # Convert to all idx of all lines
+                #id2 = np.argwhere(linesevenreal[id2]==xreal)[0][0]
                 # Now use id1 and id2 to inter/extrapolate to i
                 #y = xreal, x = xprojected. 3 xprojected are known
-                lineinter = (xreal[id2]-xreal[id1])/(xprojected[id2]-xprojected[id1])*(xprojected[i]-xprojected[id1])+xreal[id1]
-                lines_li = np.append(lines_li,lineinter)
+                #lineinter = (xreal[id2]-xreal[id1])/(xprojected[id2]-xprojected[id1])*(xprojected[i]-xprojected[id1])+xreal[id1]
+                #lines_li = np.append(lines_li,lineinter)
+                
+                idx_er = np.argsort(abs(xreal[i]-linesevenreal))[0:poldegree] # Known lines
+                _, _, idx = np.intersect1d(linesevenreal[idx_er],xreal,return_indices=True) # Convert to all idx of all lines
+                # Now use id1 and id2 to inter/extrapolate to i
+                #y = xreal, x = xprojected. 3 xprojected are known
+                fit = np.polyfit(xprojected[idx],xreal[idx],np.size(xreal[idx])-1)
+                p = np.poly1d(fit)
+                
+                lines_li = np.append(lines_li,p(xprojected[i]))
         
         # Errors reconstructed lines
         abserror_rs = abs(linesreconstructed-linesoddreal)
@@ -250,6 +261,8 @@ def find_lineaccuracy(lineidx,iterate_order=-1):
         abserror_li = abs(lines_li-linesoddreal)
         relerror_li = abs(lines_li-linesoddreal)/linespacing
 
+        if data:
+            dataarray = np.append(dataarray,(linesoddreal,linesreconstructed,linesoddproj,lines_li))
 
         # Optional, print errors
         if verbose:
@@ -257,7 +270,7 @@ def find_lineaccuracy(lineidx,iterate_order=-1):
             #print('Projected line position\n',linesoddproj) 
             #print('Reconstructed lines position\n',linesreconstructed)
             #print('Interpolated lines position\n',lines_li)
-            print('Reconstructed, projected, linearly interpolated') 
+            #print('Reconstructed, projected, linearly interpolated') 
             print(np.mean(relerror_rs),np.mean(relerror_pr),np.mean(relerror_li))
              
             #print('Relative error\n',relerror_rs)
@@ -285,14 +298,20 @@ def find_lineaccuracy(lineidx,iterate_order=-1):
             plt.draw()
             plt.waitforbuttonpress(0)
             plt.close()
+    
+    filename = 'lineaccuracy_'+str(iterate_order)+'_'+str(poldegree)+'.dat'
+    np.save(filename,dataarray)
 
 if __name__ == "__main__":  
     # Argument parser
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', type=int, nargs='+', default=-1, help='indices of lines to reconstruct')
+    parser.add_argument('-p', type=int, default=1, help='polynomial degree for interpolation')
     parser.add_argument('-o', action='store_true', help='Enable the iterative fitting order')
+    parser.add_argument('-v', action='store_true', help='Set verbosity')
+    parser.add_argument('-d', action='store_true', help='Print data')
     args = parser.parse_args()
 
-    find_lineaccuracy(args.l,iterate_order=args.o)
+    find_lineaccuracy(args.l, iterate_order=args.o, poldegree=args.p, verbose=args.v, data=args.d)
 
 
