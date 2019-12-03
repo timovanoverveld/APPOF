@@ -11,12 +11,13 @@
 import numpy as np
 import json
 import os
+import argparse
 import fnmatch
 from images2positions_functions import *
 
 
 ############################################################################
-def find_lineaccuracy():
+def find_lineaccuracy(lineidx,iterate_order=-1):
      
     # Reading settings file
     settingsfile = os.path.abspath(os.getcwd())+'/data/settings_lineaccuracy.txt'
@@ -175,35 +176,46 @@ def find_lineaccuracy():
         xprojected = pix2realx(lines)
         xreal, Nlines = clusterlines(lines,linespacing,Nlines=17)
 
-        # Look only at the even lines (0,2,4...)
-        linesevenreal = xreal[0::2]
-        linesevenproj = xprojected[0::2]
-        
-        # Loop to find best order for the fit
-        maximumerror = [0,1]
-        for j in range(1,Nlines*2,1):
-            surfaceshapeorder = j
-            # Construct water height based on even lines
-            H  = fitHpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n,surfaceshapeorder)
-            Hp = np.polyder(H)
+        if lineidx == -1: 
+            # Look only at the even lines (0,2,4...)
+            linesevenreal = xreal[0::2]
+            linesevenproj = xprojected[0::2]
+        elif np.all(lineidx) >= 0:
+            # Look at all lines except lineidx
+            linesevenreal = np.delete(xreal,lineidx)
+            linesevenproj = np.delete(xprojected,lineidx)
 
-            # Use H to calculate the real position of the odd projected lines:
-            linesoddreal = xreal[1::2] #Position it should be ('exact')
-            linesoddproj = xprojected[1::2] #Position obtained from image
-            linesreconstructed = projected2real(linesoddproj,H,Hp,xc[0],Hc[0],n) #Position reconstructed from other lines
-        
-            relerror_rs = abs(linesreconstructed-linesoddreal)/linespacing
-            errorsum = np.mean(relerror_rs)
-            if errorsum < maximumerror[1]:
-                maximumerror = [j,errorsum] 
+        #Line positions that we will verify against 
+        linesoddreal = np.setdiff1d(xreal,     linesevenreal)
+        linesoddproj = np.setdiff1d(xprojected,linesevenproj)
 
+        if iterate_order:
+            # Loop to find best order for the fit
+            maximumerror = [0,1]
+            for j in range(1,Nlines*2,1):
+                surfaceshapeorder = j
+                # Construct water height based on even lines
+                H  = fitHpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n,surfaceshapeorder)
+                Hp = np.polyder(H)
+
+                # Use H to calculate the real position of the odd projected lines:
+                linesreconstructed = projected2real(linesoddproj,H,Hp,xc[0],Hc[0],n) #Position reconstructed from other lines
+            
+                relerror_rs = abs(linesreconstructed-linesoddreal)/linespacing
+                errorsum = np.mean(relerror_rs)
+                if errorsum < maximumerror[1]:
+                    maximumerror = [j,errorsum] 
+
+            if verbose: print(maximumerror)
+            surfaceshapeorder = maximumerror[0]
         
-        H  = fitHpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n,maximumerror[0])
+        H  = fitHpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n,surfaceshapeorder)
         Hp = np.polyder(H)
 
+        #linesoddreal = xreal[1::2] #Position it should be ('exact')
+        #linesoddproj = xprojected[1::2] #Position obtained from image
+        
         # Use H to calculate the real position of the odd projected lines:
-        linesoddreal = xreal[1::2] #Position it should be ('exact')
-        linesoddproj = xprojected[1::2] #Position obtained from image
         linesreconstructed = projected2real(linesoddproj,H,Hp,xc[0],Hc[0],n) #Position reconstructed from other lines
     
 
@@ -241,23 +253,28 @@ def find_lineaccuracy():
 
         # Optional, print errors
         if verbose:
-            print('Real line position\n',linesoddreal)
-            print('Projected line position\n',linesoddproj) 
-            print('Reconstructed lines position\n',linesreconstructed)
-            print('Interpolated lines position\n',lines_li)
+            #print('Real line position\n',linesoddreal)
+            #print('Projected line position\n',linesoddproj) 
+            #print('Reconstructed lines position\n',linesreconstructed)
+            #print('Interpolated lines position\n',lines_li)
+            print('Reconstructed, projected, linearly interpolated') 
+            print(np.mean(relerror_rs),np.mean(relerror_pr),np.mean(relerror_li))
              
             #print('Relative error\n',relerror_rs)
             #print('Maximum error=\n',max(abserror_rs),'(abs)',max(relerror_rs),'(rel)')
 
         if plots:
             plt.figure(figsize=(12,8))
-            for i in range(0,np.size(linesoddreal),1):
+            for i in range(0,np.size(linesevenreal),1):
                 if i == 0:
                     plt.axvline(linesevenreal[i],linestyle='--',color='r',label='reference lines')
+                else:
+                    plt.axvline(linesevenreal[i],linestyle='--',color='r')
+            for i in range(0,np.size(linesoddreal),1):
+                if i == 0:
                     plt.axvline(linesoddreal[i],linestyle=':',color='k',label='real position')
                 else:
                     plt.axvline(linesoddreal[i],linestyle=':',color='k')
-                    plt.axvline(linesevenreal[i],linestyle='--',color='r')
 
             plt.semilogy(linesreconstructed,relerror_rs,'o',label='reconstructed')
             plt.semilogy(linesoddproj      ,relerror_pr,'^',label='projected')
@@ -269,6 +286,13 @@ def find_lineaccuracy():
             plt.waitforbuttonpress(0)
             plt.close()
 
-if __name__ == "__main__":
-    find_lineaccuracy()
+if __name__ == "__main__":  
+    # Argument parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', type=int, nargs='+', default=-1, help='indices of lines to reconstruct')
+    parser.add_argument('-o', action='store_true', help='Enable the iterative fitting order')
+    args = parser.parse_args()
+
+    find_lineaccuracy(args.l,iterate_order=args.o)
+
 
