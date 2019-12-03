@@ -199,15 +199,15 @@ def find_lineaccuracy():
 
         # Errors reconstructed lines
         abserror_rs = abs(linesreconstructed-linesoddreal)
-        relerror_rs = abs(linesreconstructed-linesoddreal)/linesoddreal 
+        relerror_rs = abs(linesreconstructed-linesoddreal)/linespacing
         
         # Errors projected lines without reconstruction (projected2real)
         abserror_pr = abs(linesoddproj-linesoddreal)
-        relerror_pr = abs(linesoddproj-linesoddreal)/linesoddreal
+        relerror_pr = abs(linesoddproj-linesoddreal)/linespacing
 
         # Errors linearly interpolated lines
         abserror_li = abs(lines_li-linesoddreal)
-        relerror_li = abs(lines_li-linesoddreal)/linesoddreal
+        relerror_li = abs(lines_li-linesoddreal)/linespacing
 
 
         # Optional, print errors
