@@ -199,6 +199,10 @@ def removeparticles(image,markers,dilate=True,dilatesize=11,method=1):
             mean = np.average(diffimage[np.nonzero(diffimage)])
             imageremoved = np.where(mask==1,mean,imageremoved)
     
+    # Remove during the adaptive thresholding stage
+    elif method == 3:
+        imageremoved = np.where(mask==1,0,image)
+
     return imageremoved
 
 def particlesfilter(image,markers):
