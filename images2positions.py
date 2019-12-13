@@ -113,16 +113,16 @@ def main():
 
     #Obtain line positions
     xpix, Hreal = pixHlist(calAlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
-
+    
     xreal, Nlines = clusterlines(xpix,linespacing)
-
+    
     # Fit the warping function through the data
     pix2realx = pixrealfit(xpix, xreal, warpingorder)
 
     # Now a similar thing for the y-coordinate, across the width of the channel
     imagesize = np.shape(readcropimage(calAlist[0],bounds=bounds))
     pix2realy = pixrealfit([0,imagesize[0]],[0,channelwidth],1)
-
+    
     if plots:
         plt.figure(figsize=(12,8))
         plt.scatter(xpix,xreal,marker='x',color='red',label='Data')
@@ -151,7 +151,7 @@ def main():
     xpix, H = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
     xprojected = pix2realx(xpix)
     xreal, Nlines = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
- 
+    
     xc, Hc = cameraposition(xprojected,xreal,H,n)
 
     if plots:
@@ -178,7 +178,6 @@ def main():
     #################################
 
     # Surface shape
-
     # Open image
     for file in calClist:
         if verbose: print('File',file)

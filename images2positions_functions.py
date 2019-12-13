@@ -337,15 +337,15 @@ def clusterlines(xpix,linespacing,Nlines=0):
     if Nlines == 0:
         sortedgrad = np.gradient(np.sort(xpix))
         xpeaks, __ = find_peaks(sortedgrad,distance=10)
-        Nlines = np.size(xpeaks)
+        Nlines = np.size(xpeaks)+1
 
     _, bins = np.histogram(xpix,bins=Nlines,range=(0,1600))
-
+     
     xreal = np.zeros(np.size(xpix))
     for i in range(0,Nlines,1):
         a = np.where((bins[i]<=xpix) & (xpix<=bins[i+1]))
         xreal[a] = linespacing*i
-
+    
     return xreal, Nlines
 
 # Fit the camera position using the projected and real positions
