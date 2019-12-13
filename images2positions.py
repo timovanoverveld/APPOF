@@ -153,7 +153,7 @@ def main():
 
     xpix, H = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
     xprojected = pix2realx(xpix)
-    xreal, Nlines = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
+    xreal, NlinesB = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
     
     xc, Hc = cameraposition(xprojected,xreal,H,n)
 
@@ -208,7 +208,8 @@ def main():
 
         # Obtain water surface shape
         xprojected = pix2realx(lines)
-        xreal, Nlines = clusterlines(lines,linespacing,Nlines=17)
+        #Use Number of lines that we known that are there, from calibration B
+        xreal, Nlines = clusterlines(lines,linespacing,Nlines=NlinesB)
 
         H  = fitHpolynomial(xreal,xprojected,xc[0],Hc[0],n,order=surfaceshapeorder,Hmean=Hmean)
         Hp = np.polyder(H)
