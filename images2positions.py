@@ -57,6 +57,9 @@ def main():
 
     # Channel width [m]
     channelwidth = settings['channelwidth']
+    
+    # Mean water height [m]
+    Hmean = settings['Hmean']
 
     # Cropping bounds (top, bottom, left, right)
     bounds = settings['bounds']
@@ -113,16 +116,16 @@ def main():
 
     #Obtain line positions
     xpix, Hreal = pixHlist(calAlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
-
+    
     xreal, Nlines = clusterlines(xpix,linespacing)
-
+    
     # Fit the warping function through the data
     pix2realx = pixrealfit(xpix, xreal, warpingorder)
 
     # Now a similar thing for the y-coordinate, across the width of the channel
     imagesize = np.shape(readcropimage(calAlist[0],bounds=bounds))
     pix2realy = pixrealfit([0,imagesize[0]],[0,channelwidth],1)
-
+    
     if plots:
         plt.figure(figsize=(12,8))
         plt.scatter(xpix,xreal,marker='x',color='red',label='Data')
@@ -150,8 +153,8 @@ def main():
 
     xpix, H = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
     xprojected = pix2realx(xpix)
-    xreal, Nlines = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
- 
+    xreal, NlinesB = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
+    
     xc, Hc = cameraposition(xprojected,xreal,H,n)
 
     if plots:
@@ -178,7 +181,6 @@ def main():
     #################################
 
     # Surface shape
-
     # Open image
     for file in calClist:
         if verbose: print('File',file)
@@ -189,10 +191,10 @@ def main():
         markers = findparticles(image,thresholdvalue)
 
         # Remove particles from image
-        image_noparticles = removeparticles(image,markers)
+        image_noparticles = removeparticles(image,markers,method=3)
 
         # Find lines in pixel values
-        lines = findlines(np.uint8(image_noparticles/16),linespacingpx,centerpx)
+        lines = findlines(np.uint8(image_noparticles/16),linespacingpx,centerpx,plot=False)
 
         if verbose: print('Line positions found')
 
@@ -206,9 +208,10 @@ def main():
 
         # Obtain water surface shape
         xprojected = pix2realx(lines)
-        xreal, Nlines = clusterlines(lines,linespacing,Nlines=17)
+        #Use Number of lines that we known that are there, from calibration B
+        xreal, Nlines = clusterlines(lines,linespacing,Nlines=NlinesB)
 
-        H  = Hpolynomial(xreal,xprojected,xc[0],Hc[0],n)
+        H  = fitHpolynomial(xreal,xprojected,xc[0],Hc[0],n,order=surfaceshapeorder,Hmean=Hmean)
         Hp = np.polyder(H)
 
         # Convert to projected real world coordinates

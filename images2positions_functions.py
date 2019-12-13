@@ -99,16 +99,26 @@ def foreground(image,dttype='L1'):
 # Object recognition #
 ######################
 
-def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilter=True):
+def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilter=True, plot=False):
     if centerpx == None:
         centerpx = np.zeros(2,dtype=int)
 
     # Extract part of the image, remove center for better statistics
     linearea = np.concatenate((image[0:centerpx[0],:],image[centerpx[1]:,:]))
-
+    
     # Threshold the extracted part of the image to obtain the lines
     threshold = cv2.adaptiveThreshold(linearea,1,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,15,10)
 #     threshold = cv2.adaptiveThreshold(linearea,1,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,25,10)
+
+    # Set particle positions in threshold to zero, if method 3 is chosen in removeparticles
+    if np.size(image==0)>1:
+        mask    = np.uint8(np.where(image==0,1,0))
+        kernelcircle  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(11,11))
+        dilated = cv2.dilate(mask,kernelcircle,iterations=1)
+        dilated = np.concatenate((dilated[0:centerpx[0],:],dilated[centerpx[1]:,:]))
+    
+    threshold = np.where(dilated==1,1,threshold)
+
 
     # Remove some additional noise caused by shadows
     threshold = cv2.morphologyEx(threshold,cv2.MORPH_CLOSE,np.ones((3,3),np.uint8),iterations=1)
@@ -122,10 +132,17 @@ def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilte
          averages = cv2.threshold(averages,0.1,1,cv2.THRESH_BINARY)[1]
 
     if gaussianfilter == True:
-        averages = ndimage.gaussian_filter1d(averages,sigma=1)
+        averages = ndimage.gaussian_filter1d(averages,sigma=3)
     
     # Fit lines with a fixed minimum separation distance
     lines, _ = find_peaks(averages, distance=linespacingpx)
+    
+    if plot:
+        plt.imshow(threshold)
+        plt.draw()
+        plt.waitforbuttonpress(0)
+        plt.close()
+    
     
     return lines
 
@@ -159,19 +176,40 @@ def findparticles(image,thresholdvalue):
 
     return markers_noborder
 
-
-def removeparticles(image,markers,dilate=True,dilatesize=11):
+# Remove the particles from the original image, method (1=global mean,2=local mean,3= fix in threshold)
+def removeparticles(image,markers,dilate=True,dilatesize=11,method=1):
     # Create mask to use in filtering of particles
     mask = np.where(markers>1,1,0)
+    kernelcircle  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
+    kernelcircle2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5, 5 ))
 
     # Dilate the mask such that shadows can be removed as well
     if dilate:
         dilate_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(dilatesize,dilatesize))
         mask = cv2.dilate(np.uint8(mask),dilate_kernel,iterations=1)
 
-    image_noparticles = np.where(mask==1,np.mean(image),image)
+    # Remove using the mean of the total image
+    if method == 1:
+        imageremoved = np.where(mask==1,np.mean(image),image)
+    
+    # Remove using the local mean
+    elif method == 2:
+        imageremoved = image
+        for i in range(2,np.max(markers)+1,1):
+            # For each marker, find the region around it by eroding
+            mask = np.uint8(np.where(markers==i,1,0)) #select marker
+            mask = cv2.dilate(mask,kernelcircle,iterations=1)
+            mask2 = cv2.dilate(mask,kernelcircle2,iterations=1) #expand marker for region
+            diff = np.where(mask!=mask2,1,0) #Expanded region
+            diffimage = np.where(diff==1,imageremoved,0)
+            mean = np.average(diffimage[np.nonzero(diffimage)])
+            imageremoved = np.where(mask==1,mean,imageremoved)
+    
+    # Remove during the adaptive thresholding stage
+    elif method == 3:
+        imageremoved = np.where(mask==1,0,image)
 
-    return image_noparticles
+    return imageremoved
 
 def particlesfilter(image,markers):
     #Number of markers (= detected particles+2)
@@ -297,18 +335,24 @@ def correctmarkers(image,markers,thresholdvalue):
 
 # For all files in a list, call pixrealH and append
 def pixHlist(filelist,Hlist,bounds=0,centerpx=None,linespacingpx=10):
+    
     #Allocate empty arrays
     xpix  = np.empty(0,dtype=float)
     Hreal = np.empty(0,dtype=float)
+   
+    if np.size(filelist)>1:
+        #Loop over files
+        for file in filelist:
+            # Obtain the values for a single file
+            xp, Hr = pixrealH(file,Hlist,linespacingpx,bounds=bounds,index=filelist.index(file),centerpx=centerpx)
 
-    #Loop over files
-    for file in filelist:
-        # Obtain the values for a single file, single side
-        xp, Hr = pixrealH(file,Hlist,linespacingpx,bounds=bounds,index=filelist.index(file),centerpx=centerpx)
+            # Addvalues to the lists
+            xpix  = np.append(xpix, xp)
+            Hreal = np.append(Hreal,Hr)
 
-        # Addvalues to the lists
-        xpix  = np.append(xpix, xp)
-        Hreal = np.append(Hreal,Hr)
+    else:
+        # Obtain the values for a single file
+        xpix, Hreal = pixrealH(filelist, Hlist, linespacingpx, bounds=bounds, index=0, centerpx=centerpx)
 
     return xpix, Hreal
 
@@ -331,15 +375,15 @@ def clusterlines(xpix,linespacing,Nlines=0):
     if Nlines == 0:
         sortedgrad = np.gradient(np.sort(xpix))
         xpeaks, __ = find_peaks(sortedgrad,distance=10)
-        Nlines = np.size(xpeaks)
+        Nlines = np.size(xpeaks)+1
 
     _, bins = np.histogram(xpix,bins=Nlines,range=(0,1600))
-
+     
     xreal = np.zeros(np.size(xpix))
     for i in range(0,Nlines,1):
         a = np.where((bins[i]<=xpix) & (xpix<=bins[i+1]))
         xreal[a] = linespacing*i
-
+    
     return xreal, Nlines
 
 # Fit the camera position using the projected and real positions
@@ -366,15 +410,17 @@ def pixrealfit(xpix, xreal, order):
     z = np.polyfit(xpix,xreal,order)
     pix2real = np.poly1d(z)
 
+    #TODO Instead of polynomial fitting, fit a Fourier series (sines) through the data    
+
     return pix2real
 
 
 # Construct a polynomial Hpolynomial that represents the water surface shape
-def Hpolynomial(xl,xp,xc,Hc,n,Hmean=0.1):
+def fitHpolynomial(xl,xp,xc,Hc,n,order,Hmean=0.1):
     # Choose a set of heights, 1 value for each line on the bottom
     H  = Hmean*np.ones(np.size(xl))
 
-    maxiterations = 5
+    maxiterations = 20
     tolerance = 1e-8
 
     #Choose an H, calculate Hpolynomial from that, and choose Hpolynomial(xw) as new value for H and repeat
@@ -384,8 +430,8 @@ def Hpolynomial(xl,xp,xc,Hc,n,Hmean=0.1):
         Hp = H2Hp(H,xl,xp,xc,Hc,n)
 
         # Find H(x) by fitting
-        Hpolynomial = fitH(xw,H,Hp)
-
+        Hpolynomial = fitH(xw,H,Hp,order)
+        
         difference = abs(Hpolynomial(xw)-H)
         if np.all(difference <= tolerance):
             break
@@ -432,7 +478,7 @@ def F(Hp,*data):
 
 
 # With the info on xw, H and H', fit a polynomial of arbitrary order through them
-def fitH(xw,H,Hp,order=5):
+def fitH(xw,H,Hp,order):
     N = np.size(H) # Number of lines
 
     #Left hand side (matrix A)
@@ -452,7 +498,6 @@ def fitH(xw,H,Hp,order=5):
     # solution = np.linalg.solve(A,b)
     coeffs = np.linalg.lstsq(A,b,rcond=None) #rcond just to silence a FutureWarning
     polynomial = np.poly1d(coeffs[0])
-
     return polynomial
 
 # Calculate xreal based on H (polynomial function) and xprojected (discrete data)
