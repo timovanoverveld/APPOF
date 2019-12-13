@@ -207,7 +207,7 @@ def main():
         xprojected = pix2realx(lines)
         xreal, Nlines = clusterlines(lines,linespacing,Nlines=17)
 
-        H  = Hpolynomial(xreal,xprojected,xc[0],Hc[0],n)
+        H  = fitHpolynomial(xreal,xprojected,xc[0],Hc[0],n,order=surfaceshapeorder)
         Hp = np.polyder(H)
 
         # Convert to projected real world coordinates

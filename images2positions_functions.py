@@ -105,7 +105,7 @@ def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilte
 
     # Extract part of the image, remove center for better statistics
     linearea = np.concatenate((image[0:centerpx[0],:],image[centerpx[1]:,:]))
-
+    
     # Threshold the extracted part of the image to obtain the lines
     threshold = cv2.adaptiveThreshold(linearea,1,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,15,10)
 #     threshold = cv2.adaptiveThreshold(linearea,1,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,25,10)
@@ -122,11 +122,19 @@ def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilte
          averages = cv2.threshold(averages,0.1,1,cv2.THRESH_BINARY)[1]
 
     if gaussianfilter == True:
-        averages = ndimage.gaussian_filter1d(averages,sigma=1)
+        averages = ndimage.gaussian_filter1d(averages,sigma=10)
     
     # Fit lines with a fixed minimum separation distance
     lines, _ = find_peaks(averages, distance=linespacingpx)
     
+    #plt.imshow(threshold)
+    #plt.plot(averages)
+    #for i in lines:
+    #    plt.axvline(i)
+    #plt.draw()
+    #plt.waitforbuttonpress(0)
+    #plt.close()
+
     return lines
 
 
@@ -159,7 +167,7 @@ def findparticles(image,thresholdvalue):
 
     return markers_noborder
 
-
+# Remove the particles from the original image
 def removeparticles(image,markers,dilate=True,dilatesize=11):
     # Create mask to use in filtering of particles
     mask = np.where(markers>1,1,0)
@@ -169,9 +177,31 @@ def removeparticles(image,markers,dilate=True,dilatesize=11):
         dilate_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(dilatesize,dilatesize))
         mask = cv2.dilate(np.uint8(mask),dilate_kernel,iterations=1)
 
-    image_noparticles = np.where(mask==1,np.mean(image),image)
+    # Remove using the mean of the total image
+    #image_noparticles = np.where(mask==1,np.mean(image),image)
+    image_noparticles = np.where(mask==1,0,image)
 
-    return image_noparticles
+    # Remove using the local mean
+    imageremoved = image
+    kernelcircle = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
+    kernelcircle2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
+    for i in range(2,np.max(markers)+1,1):
+        # For each marker, find the region around it by eroding
+        mask = np.uint8(np.where(markers==i,1,0)) #select marker
+        mask = cv2.dilate(mask,kernelcircle,iterations=1)
+        mask2 = cv2.dilate(mask,kernelcircle2,iterations=1) #expand marker for region
+        diff = np.where(mask!=mask2,1,0) #Expanded region
+        diffimage = np.where(diff==1,imageremoved,0)
+        mean = np.average(diffimage[np.nonzero(diffimage)])
+        imageremoved = np.where(mask==1,mean,imageremoved)
+    
+    #print(np.max(image),np.min(image))
+    #plt.imshow(imageremoved)
+    #plt.draw()
+    #plt.waitforbuttonpress(0)
+    #plt.close()
+
+    return imageremoved#_noparticles
 
 def particlesfilter(image,markers):
     #Number of markers (= detected particles+2)
