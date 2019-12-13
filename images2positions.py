@@ -57,6 +57,9 @@ def main():
 
     # Channel width [m]
     channelwidth = settings['channelwidth']
+    
+    # Mean water height [m]
+    Hmean = settings['Hmean']
 
     # Cropping bounds (top, bottom, left, right)
     bounds = settings['bounds']
@@ -207,7 +210,7 @@ def main():
         xprojected = pix2realx(lines)
         xreal, Nlines = clusterlines(lines,linespacing,Nlines=17)
 
-        H  = fitHpolynomial(xreal,xprojected,xc[0],Hc[0],n,order=surfaceshapeorder)
+        H  = fitHpolynomial(xreal,xprojected,xc[0],Hc[0],n,order=surfaceshapeorder,Hmean=Hmean)
         Hp = np.polyder(H)
 
         # Convert to projected real world coordinates

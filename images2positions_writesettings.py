@@ -39,6 +39,9 @@ def main():
 
         # Channel width
         'channelwidth' : 0.1, #[m]
+        
+        # Mean water height during measurements
+        'Hmean' : 0.07, #[m]
 
         # Cropping bounds
         'bounds' : [405, 405, 0, 0], # Top, bottom, left, right

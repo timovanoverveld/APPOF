@@ -41,6 +41,9 @@ def find_lineaccuracy(lineidx,iterate_order=-1,poldegree=1,verbose=False,data=Fa
     # Channel width [m]
     channelwidth = settings['channelwidth']
 
+    # Mean water height during measurements [m]
+    Hmean = settings['Hmean']
+
     # Cropping bounds (top, bottom, left, right)
     bounds = settings['bounds']
 
@@ -197,7 +200,7 @@ def find_lineaccuracy(lineidx,iterate_order=-1,poldegree=1,verbose=False,data=Fa
             for j in range(1,Nlines*2,1):
                 surfaceshapeorder = j
                 # Construct water height based on even lines
-                H  = fitHpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n,surfaceshapeorder)
+                H  = fitHpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n,surfaceshapeorder,Hmean)
                 Hp = np.polyder(H)
 
                 # Use H to calculate the real position of the odd projected lines:
