@@ -188,10 +188,10 @@ def main():
         markers = findparticles(image,thresholdvalue)
 
         # Remove particles from image
-        image_noparticles = removeparticles(image,markers)
+        image_noparticles = removeparticles(image,markers,method=3)
 
         # Find lines in pixel values
-        lines = findlines(np.uint8(image_noparticles/16),linespacingpx,centerpx)
+        lines = findlines(np.uint8(image_noparticles/16),linespacingpx,centerpx,plot=False)
 
         if verbose: print('Line positions found')
 

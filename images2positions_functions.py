@@ -99,7 +99,7 @@ def foreground(image,dttype='L1'):
 # Object recognition #
 ######################
 
-def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilter=True):
+def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilter=True, plot=False):
     if centerpx == None:
         centerpx = np.zeros(2,dtype=int)
 
@@ -109,10 +109,17 @@ def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilte
     # Threshold the extracted part of the image to obtain the lines
     threshold = cv2.adaptiveThreshold(linearea,1,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,15,10)
 #     threshold = cv2.adaptiveThreshold(linearea,1,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,25,10)
-    plt.imshow(threshold)
-    plt.draw()
-    plt.waitforbuttonpress(0)
-    plt.close()
+
+    # Set particle positions in threshold to zero, if method 3 is chosen in removeparticles
+    if np.size(image==0)>1:
+        mask    = np.uint8(np.where(image==0,1,0))
+        kernelcircle  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(11,11))
+        dilated = cv2.dilate(mask,kernelcircle,iterations=1)
+        dilated = np.concatenate((dilated[0:centerpx[0],:],dilated[centerpx[1]:,:]))
+    
+    threshold = np.where(dilated==1,1,threshold)
+
+
     # Remove some additional noise caused by shadows
     threshold = cv2.morphologyEx(threshold,cv2.MORPH_CLOSE,np.ones((3,3),np.uint8),iterations=1)
     threshold = ~np.uint8(threshold)
@@ -130,14 +137,13 @@ def findlines(image, linespacingpx, centerpx=None, binarize=False, gaussianfilte
     # Fit lines with a fixed minimum separation distance
     lines, _ = find_peaks(averages, distance=linespacingpx)
     
-   # plt.imshow(linearea)
-   # #plt.plot(averages)
-   # for i in lines:
-   #     plt.axvline(i)
-   # plt.draw()
-   # plt.waitforbuttonpress(0)
-   # plt.close()
-
+    if plot:
+        plt.imshow(threshold)
+        plt.draw()
+        plt.waitforbuttonpress(0)
+        plt.close()
+    
+    
     return lines
 
 
@@ -174,6 +180,8 @@ def findparticles(image,thresholdvalue):
 def removeparticles(image,markers,dilate=True,dilatesize=11,method=1):
     # Create mask to use in filtering of particles
     mask = np.where(markers>1,1,0)
+    kernelcircle  = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
+    kernelcircle2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5, 5 ))
 
     # Dilate the mask such that shadows can be removed as well
     if dilate:
@@ -187,8 +195,6 @@ def removeparticles(image,markers,dilate=True,dilatesize=11,method=1):
     # Remove using the local mean
     elif method == 2:
         imageremoved = image
-        kernelcircle = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
-        kernelcircle2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(5,5))
         for i in range(2,np.max(markers)+1,1):
             # For each marker, find the region around it by eroding
             mask = np.uint8(np.where(markers==i,1,0)) #select marker
