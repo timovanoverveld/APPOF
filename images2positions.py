@@ -106,7 +106,10 @@ def main():
 
     # Measurement list
     calClist = [measurementdir + i for i in os.listdir(measurementdir) if i.endswith(".tif")]
-
+    
+    if np.size(calClist) == 0:
+        print('No measurement files specified, quitting.')
+        quit()
     if verbose: print('User inputs read')
 
     #############################################
@@ -219,7 +222,7 @@ def main():
         # Convert to real real world coordinates (only for x-coordinates; the y-coordinates are not (yet) corrected)
         positionsreal = np.asarray([projected2real(positions[0,:],H,Hp,xc[0],Hc[0],n),positions[1,:]])
 
-        savename = measurementdir+file[0:-3]+'dat'
+        savename = file[0:-3]+'dat'
         np.savetxt(savename,positionsreal)
         if verbose: print('Particle positions [m] stored in',savename)
 
