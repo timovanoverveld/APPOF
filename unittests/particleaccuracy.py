@@ -17,10 +17,10 @@ from images2positions_functions import *
 
 
 ############################################################################
-def find_particleaccuracy(lineidx,iterate_order=False,poldegree=1,verbose=False,data=False):
+def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False,data=False):
      
     # Reading settings file
-    settingsfile = os.path.abspath(os.getcwd())+'/data/settings_lineaccuracy.txt'
+    settingsfile = os.path.abspath(os.getcwd())+'/data/settings_particleaccuracy.txt'
     f = open(settingsfile, 'r')
     settings = json.loads(f.read())
 
@@ -172,57 +172,31 @@ def find_particleaccuracy(lineidx,iterate_order=False,poldegree=1,verbose=False,
 
         image = readcropimage(file,bitdepth=16,bounds=bounds)
 
+        # Find markers where particles are present
+        markers = findparticles(image,thresholdvalue)
+ 
+        # Remove particles from image
+        image_noparticles = removeparticles(image,markers,method=3)
+
         # Find lines in pixel values
         lines = findlines(np.uint8(image/16),linespacingpx,centerpx)
 
         if verbose: print('Line positions found')
+        
+        # Correct for the particles that are not separated on the first try
+        imagecorrected, markerscorrected = correctmarkers(image,markers,thresholdvalue)
 
+        # Obtain the positions of the particles in pixels
+        positionspix = particlepositions(imagecorrected,markerscorrected)
+
+        #TODO: contintue here
+    
         # Obtain all information on the lines
         xprojected = pix2realx(lines)
         xreal, Nlines = clusterlines(lines,linespacing,Nlines=17)
-
-        if lineidx == -1: 
-            # Look only at the even lines (0,2,4...)
-            linesevenreal = xreal[0::2]
-            linesevenproj = xprojected[0::2]
-        elif np.all(lineidx) >= 0:
-            # Look at all lines except lineidx
-            linesevenreal = np.delete(xreal,lineidx)
-            linesevenproj = np.delete(xprojected,lineidx)
-
-        #Line positions that we will verify against 
-        linesoddreal = np.setdiff1d(xreal,     linesevenreal)
-        linesoddproj = np.setdiff1d(xprojected,linesevenproj)
-
-        if iterate_order:
-            # Loop to find best order for the fit
-            maximumerror = [0,1]
-            for j in range(1,Nlines*2,1):
-                surfaceshapeorder = j
-                # Construct water height based on even lines
-                H  = fitHpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n,surfaceshapeorder,Hmean)
-                Hp = np.polyder(H)
-
-                # Use H to calculate the real position of the odd projected lines:
-                linesreconstructed = projected2real(linesoddproj,H,Hp,xc[0],Hc[0],n) #Position reconstructed from other lines
-            
-                relerror_rs = abs(linesreconstructed-linesoddreal)/linespacing
-                errorsum = np.mean(relerror_rs)
-                if errorsum < maximumerror[1]:
-                    maximumerror = [j,errorsum] 
-
-            if verbose: print(maximumerror)
-            surfaceshapeorder = maximumerror[0]
-        
-        H  = fitHpolynomial(linesevenreal,linesevenproj,xc[0],Hc[0],n,surfaceshapeorder)
-        Hp = np.polyder(H)
-
-        #linesoddreal = xreal[1::2] #Position it should be ('exact')
-        #linesoddproj = xprojected[1::2] #Position obtained from image
-        
-        # Use H to calculate the real position of the odd projected lines:
-        linesreconstructed = projected2real(linesoddproj,H,Hp,xc[0],Hc[0],n) #Position reconstructed from other lines
     
+        H  = fitHpolynomial(xreal,xprojected,xc[0],Hc[0],n,surfaceshapeorder)
+        Hp = np.polyder(H)
 
         # Approximate the odd line positions by linear interpolation (li) of neighbouring lines
         #lines_li = (linesevenproj[0:-1]+linesevenproj[1:])/2
@@ -281,28 +255,6 @@ def find_particleaccuracy(lineidx,iterate_order=False,poldegree=1,verbose=False,
 
         if plots:
             plt.figure(figsize=(12,8))
-            if lineidx!=-1:
-                for i in lineidx:
-                    idx = lineidx.index(i)
-                    if idx == 0:
-                        z1 = plt.semilogy(i, relerror_rs[idx],'o',label='reconstructed')
-                        z2 = plt.semilogy(i, relerror_pr[idx],'^',label='projected')
-                        z3 = plt.semilogy(i, relerror_li[idx],'s',label='interpolated')
-                    else:
-                        plt.semilogy(i, relerror_rs[idx],'o',color=z1[0].get_color())
-                        plt.semilogy(i, relerror_pr[idx],'^',color=z2[0].get_color())
-                        plt.semilogy(i, relerror_li[idx],'s',color=z3[0].get_color())
-            else:
-                for i in range(0,np.size(relerror_rs),1):
-                    if i == 0:
-                        z1 = plt.semilogy(2*i+1, relerror_rs[i],'o',label='reconstructed')
-                        z2 = plt.semilogy(2*i+1, relerror_pr[i],'^',label='projected')
-                        z3 = plt.semilogy(2*i+1, relerror_li[i],'s',label='interpolated')
-                    else:
-                        plt.semilogy(2*i+1, relerror_rs[i],'o',color=z1[0].get_color())
-                        plt.semilogy(2*i+1, relerror_pr[i],'^',color=z2[0].get_color())
-                        plt.semilogy(2*i+1, relerror_li[i],'s',color=z3[0].get_color())
-
             plt.xlabel('Line number')
             plt.ylabel('Relative error [-]')
             plt.ylim(1e-5,1.0)
@@ -311,18 +263,6 @@ def find_particleaccuracy(lineidx,iterate_order=False,poldegree=1,verbose=False,
             plt.draw()
             plt.waitforbuttonpress(0)
             plt.close()
-
-            #plt.figure(figsize=(12,8))
-            #for i in range(0,np.size(linesevenreal),1):
-            #    if i == 0:
-            #        plt.axvline(linesevenreal[i],linestyle='--',color='r',label='reference lines')
-            #    else:
-            #        plt.axvline(linesevenreal[i],linestyle='--',color='r')
-            #for i in range(0,np.size(linesoddreal),1):
-            #    if i == 0:
-            #        plt.axvline(linesoddreal[i],linestyle=':',color='k',label='real position')
-            #    else:
-            #        plt.axvline(linesoddreal[i],linestyle=':',color='k')
 
             #plt.semilogy(linesreconstructed,relerror_rs,'o',label='reconstructed')
             #plt.semilogy(linesoddproj      ,relerror_pr,'^',label='projected')
@@ -337,20 +277,19 @@ def find_particleaccuracy(lineidx,iterate_order=False,poldegree=1,verbose=False,
     if data:
         # Pop the first row, contains empty
         dataarray = np.delete(dataarray,0,0) 
-        filename = 'data/lineaccuracy_'+str(iterate_order)+'_'+str(poldegree)
+        filename = 'data/particleaccuracy_'+str(iterate_order)+'_'+str(poldegree)
         np.save(filename,dataarray)
         print('Data saved in ',filename)
 
 if __name__ == "__main__":  
     # Argument parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', type=int, nargs='+', default=-1, help='indices of lines to reconstruct')
     parser.add_argument('-p', type=int, default=1, help='polynomial degree for interpolation')
     parser.add_argument('-o', action='store_true', help='Enable the iterative fitting order')
     parser.add_argument('-v', action='store_true', help='Set verbosity')
     parser.add_argument('-d', action='store_true', help='Print data')
     args = parser.parse_args()
 
-    find_particleaccuracy(args.l, iterate_order=args.o, poldegree=args.p, verbose=args.v, data=args.d)
+    find_particleaccuracy(iterate_order=args.o, poldegree=args.p, verbose=args.v, data=args.d)
 
 
