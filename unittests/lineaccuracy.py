@@ -17,7 +17,7 @@ from images2positions_functions import *
 
 
 ############################################################################
-def find_lineaccuracy(lineidx,iterate_order=-1,poldegree=1,verbose=False,data=False):
+def find_lineaccuracy(lineidx,iterate_order=False,poldegree=1,verbose=False,data=False):
      
     # Reading settings file
     settingsfile = os.path.abspath(os.getcwd())+'/data/settings_lineaccuracy.txt'
@@ -302,8 +302,9 @@ def find_lineaccuracy(lineidx,iterate_order=-1,poldegree=1,verbose=False,data=Fa
             plt.waitforbuttonpress(0)
             plt.close()
     
-    filename = 'lineaccuracy_'+str(iterate_order)+'_'+str(poldegree)+'.dat'
-    np.save(filename,dataarray)
+    if data:
+        filename = 'lineaccuracy_'+str(iterate_order)+'_'+str(poldegree)+'.dat'
+        np.save(filename,dataarray)
 
 if __name__ == "__main__":  
     # Argument parser
