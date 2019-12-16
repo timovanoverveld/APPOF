@@ -219,7 +219,7 @@ def main():
         # Convert to real real world coordinates (only for x-coordinates; the y-coordinates are not (yet) corrected)
         positionsreal = np.asarray([projected2real(positions[0,:],H,Hp,xc[0],Hc[0],n),positions[1,:]])
 
-        savename = file[0:-3]+'dat'
+        savename = measurementdir+file[0:-3]+'dat'
         np.savetxt(savename,positionsreal)
         if verbose: print('Particle positions [m] stored in',savename)
 
