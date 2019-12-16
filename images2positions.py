@@ -216,7 +216,8 @@ def main():
 
         H  = fitHpolynomial(xreal,xprojected,xc[0],Hc[0],n,order=surfaceshapeorder,Hmean=Hmean)
         Hp = np.polyder(H)
-
+    
+        # Particles again!
         # Convert to projected real world coordinates
         positions = np.asarray([pix2realx(positionspix[:,0]),pix2realy(positionspix[:,1])])
         # Convert to real real world coordinates (only for x-coordinates; the y-coordinates are not (yet) corrected)
@@ -240,10 +241,21 @@ def main():
             plt.close()
 
             plt.figure(figsize=(12,8))
-            plt.scatter(xprojected,0*xprojected,color='blue')
-            plt.scatter(xreal,0*xreal,color='red')
-            x = np.linspace(0,0.4,100)
+            plt.scatter(xprojected,0*xprojected,color='blue',label='projected positions')
+            plt.scatter(xreal,0*xreal,color='red',label='real positions')
+            x = np.linspace(np.min((np.min(xprojected),np.min(xreal))),np.max((np.max(xprojected),np.max(xreal))),100)
             plt.fill_between(x,0,H(x),color='blue',alpha=0.1)
+        
+            data = (xprojected,H,xc[0],Hc[0])
+            xw = optimization.root(intersection,xprojected,args=data)
+            xw = xw.x
+            for i in range(0,np.size(xprojected),1):
+                plt.plot([xprojected[i],xw[i]],[0,H(xw[i])],'k--')
+                plt.plot([xreal[i],xw[i]],[0,H(xw[i])],'k')
+                plt.plot([xw[i],xc[0]],[H(xw[i]),Hc[0]],'k')
+            plt.scatter(xw,H(xw),marker='x')
+            plt.ylim(-0.01,0.1)
+            plt.legend()
             plt.draw()
             plt.waitforbuttonpress(0)
             plt.close()
