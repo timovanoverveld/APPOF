@@ -213,7 +213,7 @@ def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False):
         # Approximate the particle positions by linear interpolation (li) of neighbouring lines
         
         # Array to overwrite
-        positionsinterpolated = positionsreal
+        positionsinterpolated = positionsreal*1
         
         # Loop over particles (projected) x positions
         for i in range(0,np.size(positions[0,:]),1):
@@ -224,11 +224,15 @@ def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False):
             # x = xprojected[idx] (projected positions lines), y = xreal[idx] (real positions lines)
             fit = np.polyfit(xprojected[idx],xreal[idx],np.size(xreal[idx])-1)
             p = np.poly1d(fit)
-           
+            
             positionsinterpolated[0,i] = p(x)
 
+        ############
+        # Plotting #
+        ############
+
         if plots:
-            plt.figure(figsize=(20,20))
+            plt.figure(figsize=(20,15))
             plt.imshow(image,origin='low')
             for i in linespix:
                 plt.axvline(i,linewidth=1,color='red')
@@ -247,6 +251,14 @@ def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False):
             plt.fill_between([0,np.max(positions[0,:])],0,-0.01,color='gray')
     #         plt.axes().set_aspect('equal')
             plt.legend()
+            plt.draw()
+            plt.waitforbuttonpress(0)
+            plt.close()
+
+            plt.figure(figsize=(12,8))
+            plt.semilogy(abs(positionsreal[0,:]-positionsinterpolated[0,:]),'x')
+            plt.xlabel('Particle number')
+            plt.ylabel('Absolute difference between particles [m]')
             plt.draw()
             plt.waitforbuttonpress(0)
             plt.close()
