@@ -176,7 +176,7 @@ def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False):
         image_noparticles = removeparticles(image,markers,method=3)
 
         # Find lines in pixel values
-        linespix = findlines(np.uint8(image/16),linespacingpx,centerpx)
+        linespix = findlines(np.uint8(image_noparticles/16),linespacingpx,centerpx)
 
         if verbose: print('Line positions found')
         
