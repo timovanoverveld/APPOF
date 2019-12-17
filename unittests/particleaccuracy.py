@@ -17,7 +17,7 @@ from images2positions_functions import *
 
 
 ############################################################################
-def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False,data=False):
+def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False):
      
     # Reading settings file
     settingsfile = os.path.abspath(os.getcwd())+'/data/settings_particleaccuracy.txt'
@@ -135,7 +135,7 @@ def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False,data=Fal
 
     xpix, H = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
     xprojected = pix2realx(xpix)
-    xreal, Nlines = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
+    xreal, NlinesB = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
  
     xc, Hc = cameraposition(xprojected,xreal,H,n)
 
@@ -161,11 +161,8 @@ def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False,data=Fal
         print('Hc = ',format(Hc[0],'.3f'), '+-',format(Hc[1],'.3f')+' m')
 
     #################################
-
     # Surface shape
-    if data:
-        dataarray = np.array(np.empty((4),dtype=float))
-
+    
     # Open image
     for file in calClist:
         if verbose: print('File',file)
@@ -179,7 +176,7 @@ def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False,data=Fal
         image_noparticles = removeparticles(image,markers,method=3)
 
         # Find lines in pixel values
-        lines = findlines(np.uint8(image/16),linespacingpx,centerpx)
+        linespix = findlines(np.uint8(image/16),linespacingpx,centerpx)
 
         if verbose: print('Line positions found')
         
@@ -188,98 +185,71 @@ def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False,data=Fal
 
         # Obtain the positions of the particles in pixels
         positionspix = particlepositions(imagecorrected,markerscorrected)
+        
+        if verbose: print('Particle positions found [px]')
+ 
+        # Convert line pixels to meters
+        xprojected = pix2realx(linespix)
+        #Use number of lines that we known that are there, from calibration B
+        xreal, Nlines = clusterlines(linespix,linespacing,Nlines=NlinesB)
+        
+        # Convert particles pixels to projected meters
+        positions = np.asarray([pix2realx(positionspix[:,0]),pix2realy(positionspix[:,1])])
 
-        #TODO: contintue here
-    
-        # Obtain all information on the lines
-        xprojected = pix2realx(lines)
-        xreal, Nlines = clusterlines(lines,linespacing,Nlines=17)
-    
-        H  = fitHpolynomial(xreal,xprojected,xc[0],Hc[0],n,surfaceshapeorder)
+        #######################################
+        # Surface shape reconstruction method #
+        #######################################
+
+        H  = fitHpolynomial(xreal,xprojected,xc[0],Hc[0],n,order=surfaceshapeorder,Hmean=Hmean)
         Hp = np.polyder(H)
 
-        # Approximate the odd line positions by linear interpolation (li) of neighbouring lines
-        #lines_li = (linesevenproj[0:-1]+linesevenproj[1:])/2
-        # This was faulty, because it assumed the other line to be in between the other lines. The infromation stored in xprojected is in fact available from the image, so predict the line in the center.
-        # Index to which line it belongs
-        lines_li = np.empty(0,dtype=float) 
-        for i in range(0,np.size(xreal),1):
-            if xreal[i] in linesevenreal:
-                # Line is known
-                pass
-            else:
-                # Line unknown, find which 2 known lines are closest
-                #id1, id2 = np.argsort(abs(xreal[i]-linesevenreal))[0:2] # Known lines
-                #id1 = np.argwhere(linesevenreal[id1]==xreal)[0][0] # Convert to all idx of all lines
-                #id2 = np.argwhere(linesevenreal[id2]==xreal)[0][0]
-                # Now use id1 and id2 to inter/extrapolate to i
-                #y = xreal, x = xprojected. 3 xprojected are known
-                #lineinter = (xreal[id2]-xreal[id1])/(xprojected[id2]-xprojected[id1])*(xprojected[i]-xprojected[id1])+xreal[id1]
-                #lines_li = np.append(lines_li,lineinter)
-                
-                idx_er = np.argsort(abs(xreal[i]-linesevenreal))[0:poldegree] # Known lines
-                _, _, idx = np.intersect1d(linesevenreal[idx_er],xreal,return_indices=True) # Convert to all idx of all lines
-                # Now use id1 and id2 to inter/extrapolate to i
-                #y = xreal, x = xprojected. 3 xprojected are known
-                fit = np.polyfit(xprojected[idx],xreal[idx],np.size(xreal[idx])-1)
-                p = np.poly1d(fit)
-                
-                lines_li = np.append(lines_li,p(xprojected[i]))
+        # Convert to real meters (correction only for x coordinate)
+        positionsreal = np.asarray([projected2real(positions[0,:],H,Hp,xc[0],Hc[0],n),positions[1,:]])
+
+        #############################
+        # Line interpolation method #
+        #############################
+
+        # Approximate the particle positions by linear interpolation (li) of neighbouring lines
         
-        # Errors reconstructed lines
-        abserror_rs = abs(linesreconstructed-linesoddreal)
-        relerror_rs = abs(linesreconstructed-linesoddreal)/linespacing
+        # Array to overwrite
+        positionsinterpolated = positionsreal
         
-        # Errors projected lines without reconstruction (projected2real)
-        abserror_pr = abs(linesoddproj-linesoddreal)
-        relerror_pr = abs(linesoddproj-linesoddreal)/linespacing
-
-        # Errors linearly interpolated lines
-        abserror_li = abs(lines_li-linesoddreal)
-        relerror_li = abs(lines_li-linesoddreal)/linespacing
-
-        if data:
-            dataarray = np.vstack((dataarray,np.transpose(np.array([linesoddreal,linesreconstructed,linesoddproj,lines_li]))))
-
-        # Optional, print errors
-        if verbose:
-            #print('Real line position\n',linesoddreal)
-            #print('Projected line position\n',linesoddproj) 
-            #print('Reconstructed lines position\n',linesreconstructed)
-            #print('Interpolated lines position\n',lines_li)
-            #print('Reconstructed, projected, linearly interpolated') 
-            print(np.mean(relerror_rs),np.mean(relerror_pr),np.mean(relerror_li))
-             
-            #print('Relative error\n',relerror_rs)
-            #print('Maximum error=\n',max(abserror_rs),'(abs)',max(relerror_rs),'(rel)')
+        # Loop over particles (projected) x positions
+        for i in range(0,np.size(positions[0,:]),1):
+            x = positions[0,i]
+            # Find indices of the poldegree closest lines
+            idx = np.argsort(abs(x-xreal))[0:poldegree+1]
+            # Now use idx inter/extrapolate using a polynomial fit
+            # x = xprojected[idx] (projected positions lines), y = xreal[idx] (real positions lines)
+            fit = np.polyfit(xprojected[idx],xreal[idx],np.size(xreal[idx])-1)
+            p = np.poly1d(fit)
+           
+            positionsinterpolated[0,i] = p(x)
 
         if plots:
-            plt.figure(figsize=(12,8))
-            plt.xlabel('Line number')
-            plt.ylabel('Relative error [-]')
-            plt.ylim(1e-5,1.0)
-            plt.legend()
-            plt.grid(axis='y')
+            plt.figure(figsize=(20,20))
+            plt.imshow(image,origin='low')
+            for i in linespix:
+                plt.axvline(i,linewidth=1,color='red')
+            plt.scatter(positionspix[:,0],positionspix[:,1],color='red',marker='x',s=5)
             plt.draw()
             plt.waitforbuttonpress(0)
             plt.close()
 
-            #plt.semilogy(linesreconstructed,relerror_rs,'o',label='reconstructed')
-            #plt.semilogy(linesoddproj      ,relerror_pr,'^',label='projected')
-            #plt.semilogy(lines_li          ,relerror_li,'s',label='interpolated')
-            #plt.xlabel('Position along channel [m]')
-            #plt.ylabel('Relative error [-]')
-            #plt.legend()
-            #plt.draw()
-            #plt.waitforbuttonpress(0)
-            #plt.close()
-    
-    if data:
-        # Pop the first row, contains empty
-        dataarray = np.delete(dataarray,0,0) 
-        filename = 'data/particleaccuracy_'+str(iterate_order)+'_'+str(poldegree)
-        np.save(filename,dataarray)
-        print('Data saved in ',filename)
+            plt.figure(figsize=(12,8))
+            plt.scatter(positions[0,:],positions[1,:],color='blue',label='projected positions')
+            plt.scatter(positionsreal[0,:],positionsreal[1,:],color='red',label='reconstructed positions',marker='x')
+            plt.scatter(positionsinterpolated[0,:],positionsinterpolated[1,:],color='green',label='interpolated positions',marker='^')
+            plt.xlabel('Distance along channel [m]')
+            plt.ylabel('Distance across channel [m]')
+            plt.fill_between([0,np.max(positions[0,:])],0.1,0.11,color='gray')
+            plt.fill_between([0,np.max(positions[0,:])],0,-0.01,color='gray')
+    #         plt.axes().set_aspect('equal')
+            plt.legend()
+            plt.draw()
+            plt.waitforbuttonpress(0)
+            plt.close()
 
 if __name__ == "__main__":  
     # Argument parser
@@ -287,9 +257,8 @@ if __name__ == "__main__":
     parser.add_argument('-p', type=int, default=1, help='polynomial degree for interpolation')
     parser.add_argument('-o', action='store_true', help='Enable the iterative fitting order')
     parser.add_argument('-v', action='store_true', help='Set verbosity')
-    parser.add_argument('-d', action='store_true', help='Print data')
     args = parser.parse_args()
 
-    find_particleaccuracy(iterate_order=args.o, poldegree=args.p, verbose=args.v, data=args.d)
+    find_particleaccuracy(iterate_order=args.o, poldegree=args.p, verbose=args.v)
 
 
