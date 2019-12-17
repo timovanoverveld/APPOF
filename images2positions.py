@@ -74,6 +74,8 @@ def main():
     warpingorder = settings['warpingorder']
     surfaceshapeorder = settings['surfaceshapeorder']
 
+    reconstruction = settings['reconstruction']
+
     plots   = settings['plots']
 
     verbose = settings['verbose']
@@ -209,20 +211,46 @@ def main():
 
         if verbose: print('Particle positions found [px]')
 
-        # Obtain water surface shape
+        #Convert line positions (px -> m projected)
         xprojected = pix2realx(lines)
         #Use Number of lines that we known that are there, from calibration B
         xreal, Nlines = clusterlines(lines,linespacing,Nlines=NlinesB)
 
-        H  = fitHpolynomial(xreal,xprojected,xc[0],Hc[0],n,order=surfaceshapeorder,Hmean=Hmean)
-        Hp = np.polyder(H)
-    
-        # Particles again!
-        # Convert to projected real world coordinates
-        positions = np.asarray([pix2realx(positionspix[:,0]),pix2realy(positionspix[:,1])])
-        # Convert to real real world coordinates (only for x-coordinates; the y-coordinates are not (yet) corrected)
-        positionsreal = np.asarray([projected2real(positions[0,:],H,Hp,xc[0],Hc[0],n),positions[1,:]])
+        if reconstruction == True:
+            #######################################
+            # Surface shape reconstruction method #
+            #######################################
 
+            H  = fitHpolynomial(xreal,xprojected,xc[0],Hc[0],n,order=surfaceshapeorder,Hmean=Hmean)
+            Hp = np.polyder(H)
+
+            # Convert to real meters (correction only for x coordinate)
+            positionsreal = np.asarray([projected2real(positions[0,:],H,Hp,xc[0],Hc[0],n),positions[1,:]])
+        elif reconstruction == False:
+            #############################
+            # Line interpolation method #
+            #############################
+
+            # Approximate the particle positions by linear interpolation (li) of neighbouring lines
+            # The order of the interpolation is given by surfaceshapeorder
+            
+            # Array to overwrite
+            positionsreal = np.asarray([positions[1,:],positions[1,:]])
+            
+            # Loop over particles (projected) x positions
+            for i in range(0,np.size(positions[0,:]),1):
+                x = positions[0,i]
+                # Find indices of the poldegree closest lines
+                idx = np.argsort(abs(x-xreal))[0:surfaceshapeorder+1]
+                # Now use idx inter/extrapolate using a polynomial fit
+                # x = xprojected[idx] (projected positions lines), y = xreal[idx] (real positions lines)
+                fit = np.polyfit(xprojected[idx],xreal[idx],np.size(xreal[idx])-1)
+                p = np.poly1d(fit)
+                
+                # Obtain the real x position
+                positionsreal[0,i] = p(x)
+        
+        
         savename = file[0:-3]+'dat'
         np.savetxt(savename,positionsreal)
         if verbose: print('Particle positions [m] stored in',savename)
@@ -246,19 +274,20 @@ def main():
             x = np.linspace(np.min((np.min(xprojected),np.min(xreal))),np.max((np.max(xprojected),np.max(xreal))),100)
             plt.fill_between(x,0,H(x),color='blue',alpha=0.1)
         
-            data = (xprojected,H,xc[0],Hc[0])
-            xw = optimization.root(intersection,xprojected,args=data)
-            xw = xw.x
-            for i in range(0,np.size(xprojected),1):
-                plt.plot([xprojected[i],xw[i]],[0,H(xw[i])],'k--')
-                plt.plot([xreal[i],xw[i]],[0,H(xw[i])],'k')
-                plt.plot([xw[i],xc[0]],[H(xw[i]),Hc[0]],'k')
-            plt.scatter(xw,H(xw),marker='x')
-            plt.ylim(-0.01,0.1)
-            plt.legend()
-            plt.draw()
-            plt.waitforbuttonpress(0)
-            plt.close()
+            if reconstructed: 
+                data = (xprojected,H,xc[0],Hc[0])
+                xw = optimization.root(intersection,xprojected,args=data)
+                xw = xw.x
+                for i in range(0,np.size(xprojected),1):
+                    plt.plot([xprojected[i],xw[i]],[0,H(xw[i])],'k--')
+                    plt.plot([xreal[i],xw[i]],[0,H(xw[i])],'k')
+                    plt.plot([xw[i],xc[0]],[H(xw[i]),Hc[0]],'k')
+                plt.scatter(xw,H(xw),marker='x')
+                plt.ylim(-0.01,0.1)
+                plt.legend()
+                plt.draw()
+                plt.waitforbuttonpress(0)
+                plt.close()
 
             # Compare images
             plt.figure(figsize=(12,8))
