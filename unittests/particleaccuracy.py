@@ -162,7 +162,8 @@ def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False):
 
     #################################
     # Surface shape
-    
+
+    errors = np.empty(0,dtype=float)
     # Open image
     for file in calClist:
         if verbose: print('File',file)
@@ -226,7 +227,8 @@ def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False):
             p = np.poly1d(fit)
             
             positionsinterpolated[0,i] = p(x)
-
+        
+        errors = np.append(errors,abs(positionsreal[0,:]-positionsinterpolated[0,:]))
         ############
         # Plotting #
         ############
@@ -262,6 +264,8 @@ def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False):
             plt.draw()
             plt.waitforbuttonpress(0)
             plt.close()
+
+    np.save('data/errorsparticlepositions',errors)
 
 if __name__ == "__main__":  
     # Argument parser
