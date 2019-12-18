@@ -17,7 +17,7 @@ from images2positions_functions import *
 
 
 ############################################################################
-def find_particleaccuracy(iterate_order=False,poldegree=1,verbose=False):
+def find_particleaccuracy(poldegree=1,verbose=False):
      
     # Reading settings file
     settingsfile = os.path.abspath(os.getcwd())+'/data/settings_particleaccuracy.txt'
@@ -271,10 +271,9 @@ if __name__ == "__main__":
     # Argument parser
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', type=int, default=1, help='polynomial degree for interpolation')
-    parser.add_argument('-o', action='store_true', help='Enable the iterative fitting order')
     parser.add_argument('-v', action='store_true', help='Set verbosity')
     args = parser.parse_args()
 
-    find_particleaccuracy(iterate_order=args.o, poldegree=args.p, verbose=args.v)
+    find_particleaccuracy(poldegree=args.p, verbose=args.v)
 
 
