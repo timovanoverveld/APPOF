@@ -54,7 +54,8 @@ def main():
         # Fitting order
         'warpingorder' : 3,
         'surfaceshapeorder' : 10,
-
+        
+        'reconstruction' : True,
         'plots'   : True,
         'verbose' : True
     }

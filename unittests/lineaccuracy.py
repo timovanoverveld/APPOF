@@ -17,7 +17,7 @@ from images2positions_functions import *
 
 
 ############################################################################
-def find_lineaccuracy(lineidx,iterate_order=-1,poldegree=1,verbose=False,data=False):
+def find_lineaccuracy(lineidx,iterate_order=False,poldegree=1,verbose=False,data=False):
      
     # Reading settings file
     settingsfile = os.path.abspath(os.getcwd())+'/data/settings_lineaccuracy.txt'
@@ -164,7 +164,7 @@ def find_lineaccuracy(lineidx,iterate_order=-1,poldegree=1,verbose=False,data=Fa
 
     # Surface shape
     if data:
-        dataarray = np.empty((4,0),dtype=float)
+        dataarray = np.array(np.empty((4),dtype=float))
 
     # Open image
     for file in calClist:
@@ -265,7 +265,7 @@ def find_lineaccuracy(lineidx,iterate_order=-1,poldegree=1,verbose=False,data=Fa
         relerror_li = abs(lines_li-linesoddreal)/linespacing
 
         if data:
-            dataarray = np.append(dataarray,(linesoddreal,linesreconstructed,linesoddproj,lines_li))
+            dataarray = np.vstack((dataarray,np.transpose(np.array([linesoddreal,linesreconstructed,linesoddproj,lines_li]))))
 
         # Optional, print errors
         if verbose:
@@ -281,29 +281,65 @@ def find_lineaccuracy(lineidx,iterate_order=-1,poldegree=1,verbose=False,data=Fa
 
         if plots:
             plt.figure(figsize=(12,8))
-            for i in range(0,np.size(linesevenreal),1):
-                if i == 0:
-                    plt.axvline(linesevenreal[i],linestyle='--',color='r',label='reference lines')
-                else:
-                    plt.axvline(linesevenreal[i],linestyle='--',color='r')
-            for i in range(0,np.size(linesoddreal),1):
-                if i == 0:
-                    plt.axvline(linesoddreal[i],linestyle=':',color='k',label='real position')
-                else:
-                    plt.axvline(linesoddreal[i],linestyle=':',color='k')
+            if lineidx!=-1:
+                for i in lineidx:
+                    idx = lineidx.index(i)
+                    if idx == 0:
+                        z1 = plt.semilogy(i, relerror_rs[idx],'o',label='reconstructed')
+                        z2 = plt.semilogy(i, relerror_pr[idx],'^',label='projected')
+                        z3 = plt.semilogy(i, relerror_li[idx],'s',label='interpolated')
+                    else:
+                        plt.semilogy(i, relerror_rs[idx],'o',color=z1[0].get_color())
+                        plt.semilogy(i, relerror_pr[idx],'^',color=z2[0].get_color())
+                        plt.semilogy(i, relerror_li[idx],'s',color=z3[0].get_color())
+            else:
+                for i in range(0,np.size(relerror_rs),1):
+                    if i == 0:
+                        z1 = plt.semilogy(2*i+1, relerror_rs[i],'o',label='reconstructed')
+                        z2 = plt.semilogy(2*i+1, relerror_pr[i],'^',label='projected')
+                        z3 = plt.semilogy(2*i+1, relerror_li[i],'s',label='interpolated')
+                    else:
+                        plt.semilogy(2*i+1, relerror_rs[i],'o',color=z1[0].get_color())
+                        plt.semilogy(2*i+1, relerror_pr[i],'^',color=z2[0].get_color())
+                        plt.semilogy(2*i+1, relerror_li[i],'s',color=z3[0].get_color())
 
-            plt.semilogy(linesreconstructed,relerror_rs,'o',label='reconstructed')
-            plt.semilogy(linesoddproj      ,relerror_pr,'^',label='projected')
-            plt.semilogy(lines_li          ,relerror_li,'s',label='interpolated')
-            plt.xlabel('Position along channel [m]')
+            plt.xlabel('Line number')
             plt.ylabel('Relative error [-]')
+            plt.ylim(1e-5,1.0)
             plt.legend()
+            plt.grid(axis='y')
             plt.draw()
             plt.waitforbuttonpress(0)
             plt.close()
+
+            #plt.figure(figsize=(12,8))
+            #for i in range(0,np.size(linesevenreal),1):
+            #    if i == 0:
+            #        plt.axvline(linesevenreal[i],linestyle='--',color='r',label='reference lines')
+            #    else:
+            #        plt.axvline(linesevenreal[i],linestyle='--',color='r')
+            #for i in range(0,np.size(linesoddreal),1):
+            #    if i == 0:
+            #        plt.axvline(linesoddreal[i],linestyle=':',color='k',label='real position')
+            #    else:
+            #        plt.axvline(linesoddreal[i],linestyle=':',color='k')
+
+            #plt.semilogy(linesreconstructed,relerror_rs,'o',label='reconstructed')
+            #plt.semilogy(linesoddproj      ,relerror_pr,'^',label='projected')
+            #plt.semilogy(lines_li          ,relerror_li,'s',label='interpolated')
+            #plt.xlabel('Position along channel [m]')
+            #plt.ylabel('Relative error [-]')
+            #plt.legend()
+            #plt.draw()
+            #plt.waitforbuttonpress(0)
+            #plt.close()
     
-    filename = 'lineaccuracy_'+str(iterate_order)+'_'+str(poldegree)+'.dat'
-    np.save(filename,dataarray)
+    if data:
+        # Pop the first row, contains empty
+        dataarray = np.delete(dataarray,0,0) 
+        filename = 'data/lineaccuracy_'+str(iterate_order)+'_'+str(poldegree)
+        np.save(filename,dataarray)
+        print('Data saved in ',filename)
 
 if __name__ == "__main__":  
     # Argument parser
