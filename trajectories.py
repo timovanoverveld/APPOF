@@ -62,7 +62,7 @@ def trajectories():
     #############################################
 
     sortedlist = [int(x.replace('.dat','').replace('.','')) for x in flist]
-    sortedlist = np.argsort(sortedlist)#[float(x[:-4]) for x in sortedlist]
+    sortedlist = np.argsort(sortedlist)
     
     flistsorted = list(flist[sortedlist])
     
@@ -112,10 +112,23 @@ def trajectories():
                     particlessorted[j,i,0] = x[idx_fw]
                     particlessorted[j,i,1] = y[idx_fw]
 
-    plt.figure()
-    for j in range(0,N_max,1):
-        plt.plot(particlessorted[j,:,0],particlessorted[j,:,1])
-    plt.show()
+    # Saving the data
+    # Create directory
+    if not os.path.exists(measurementdir+'trajectories'):
+        os.makedirs(measurementdir+'trajectories')
+
+    savename_x = measurementdir+'/trajectories/'+method+'_x.dat'
+    savename_y = measurementdir+'/trajectories/'+method+'_y.dat'
+    np.savetxt(savename_x,particlessorted[:,:,0])
+    np.savetxt(savename_y,particlessorted[:,:,1])
+
+    if verbose: print('Particle positions [m] stored in',savename_x)
+    
+    if plots: 
+        plt.figure()
+        for j in range(0,N_max,1):
+            plt.plot(particlessorted[j,:,0],particlessorted[j,:,1])
+        plt.show()
        
 
 
