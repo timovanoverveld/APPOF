@@ -38,29 +38,27 @@ def trajectories():
     # Directories
     basedir = settings['basedir']
     measurementdir = basedir + settings['measurementdir']
-
+    positionsdir = measurementdir + 'positions/' 
+    
     plots   = settings['plots']
     verbose = settings['verbose']
 
     if verbose: print('Constants read')
 
-    #np.set_printoptions(threshold=np.inf)
-   
     # Find all position files (.dat)
     # Allocation
     flist = np.empty(0,dtype=int)
 
-    for (dirpath, dirnames, filenames) in os.walk(measurementdir):
+    for (dirpath, dirnames, filenames) in os.walk(positionsdir):
         f = np.asarray(fnmatch.filter(filenames,'*.dat*'))
         flist = np.append(flist,f)
 
     if np.size(flist) == 0:
-        print('Searched through ',measurementdir,'\nNo measurement files specified, quitting.')
+        print('Searched through ',positionsdir,'\nNo measurement files specified, quitting.')
         quit()
     if verbose: print('User inputs read')
 
     #############################################
-
     sortedlist = [int(x.replace('.dat','').replace('.','')) for x in flist]
     sortedlist = np.argsort(sortedlist)
     
@@ -81,7 +79,7 @@ def trajectories():
     
     for i in range(0,N_timesteps,1):
         filename = flistsorted[i]
-        data = np.loadtxt(measurementdir+filename)
+        data = np.loadtxt(positionsdir+filename)
             
         x = np.asarray(data[0])
         y = np.asarray(data[1])
@@ -112,13 +110,13 @@ def trajectories():
                     particlessorted[j,i,0] = x[idx_fw]
                     particlessorted[j,i,1] = y[idx_fw]
 
-    # Saving the data
-    # Create directory
+    # Create directories
     if not os.path.exists(measurementdir+'trajectories'):
         os.makedirs(measurementdir+'trajectories')
 
-    savename_x = measurementdir+'/trajectories/'+method+'_x.dat'
-    savename_y = measurementdir+'/trajectories/'+method+'_y.dat'
+    # Saving the data
+    savename_x = measurementdir+'trajectories/'+method+'_x.dat'
+    savename_y = measurementdir+'trajectories/'+method+'_y.dat'
     np.savetxt(savename_x,particlessorted[:,:,0])
     np.savetxt(savename_y,particlessorted[:,:,1])
 
