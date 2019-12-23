@@ -70,8 +70,7 @@ def trajectories():
     # Maximum number of particles
     N_max = 300
 
-
-    method = 'forwardsimple'
+    method = 'backwardsimple'#'forwardsimple'
      
     # Create emtpy array to store particle data, 
     # Number of particles X Number of timesteps X coordinates (x,y)
@@ -109,6 +108,23 @@ def trajectories():
                     # Simplest is to store and overwrite where neccessary
                     particlessorted[j,i,0] = x[idx_fw]
                     particlessorted[j,i,1] = y[idx_fw]
+            
+            elif method == 'backwardsimple':
+                for j in range(0,N,1):
+                    # Distance from particle j in step i to all particles in step i-i
+                    distance_bw = np.sqrt((particlessorted[:,i-1,0]-x[j])**2+(particlessorted[:,i-1,1]-y[j])**2)
+                    #print(x[j],y[j])
+                    #print(distance_bw) 
+                    # Find shortest distance and store the argument of the particle in the ith step that corresponds to the closest in j
+                    idx_bw = np.argsort(distance_bw)[0]
+
+                    #THERE IS AN INDEX MISMATCH GOING ON HERE, x is shorter, contains only present particles, partially solved
+                    
+                    # Simplest is to store and overwrite where neccessary
+                    particlessorted[idx_bw,i,0] = x[j]
+                    particlessorted[idx_bw,i,1] = y[j]
+
+
 
     # Create directories
     if not os.path.exists(measurementdir+'trajectories'):
