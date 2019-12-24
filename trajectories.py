@@ -53,10 +53,10 @@ def trajectories():
 
     if verbose: print('Constants read')
 
-    # Find all position files (.dat)
     # Allocation
     flist = np.empty(0,dtype=int)
 
+    # Find all position files (.dat)
     for (dirpath, dirnames, filenames) in os.walk(positionsdir):
         f = np.asarray(fnmatch.filter(filenames,'*.dat*'))
         flist = np.append(flist,f)
@@ -69,7 +69,6 @@ def trajectories():
     #############################################
     sortedlist = [int(x.replace('.dat','').replace('.','')) for x in flist]
     sortedlist = np.argsort(sortedlist)
-    
     flistsorted = list(flist[sortedlist])
     
     # Number of timesteps
@@ -132,7 +131,7 @@ def trajectories():
             elif method == 'fwbw':
                 I = np.linspace(0,N_max-1,N_max,dtype=int)
                 ind_loop = np.linspace(0,N_max-1,N_max,dtype=int) # Indices to include in the calculation
-                distance_thres = 0.02 # Distance threshold in meters
+                distance_thres = 0.01 # Distance threshold in meters
                     
                 # Choose particle i
                 idx_fw = np.zeros(N_max,dtype=int)
@@ -140,7 +139,7 @@ def trajectories():
                
                 Nprev = np.count_nonzero(particlessorted[:,i-1,0])
                 # Calculate forward distances
-                for j in range(0,Nprev,1): #TODO change range to ind_loop
+                for j in range(0,Nprev,1): #TODO change range to ind_loop or likewise
                     if j >= 0:
                         # Distance from particle j in step i-1 to all particles in step i
                         distance_fw = np.sqrt((particlessorted[j,i-1,0]-x)**2+(particlessorted[j,i-1,1]-y)**2)
@@ -193,7 +192,6 @@ def trajectories():
                 
                 #First zero at the end of particlessorted: find last nonzero 
                 nz = np.nonzero(particlessorted[:,i,0])[0][-1]+1
-                print(N_used)
                 
                 particlessorted[N_used:N_used+np.size(unused),i,0] = x[unused]
                 particlessorted[N_used:N_used+np.size(unused),i,1] = y[unused]
@@ -220,10 +218,11 @@ def trajectories():
         plt.figure()
         for j in range(0,N_max,1):
             nonzero = np.nonzero(particlessorted[j,:,0])[0]
-            plotx = particlessorted[j,nonzero,0]
-            ploty = particlessorted[j,nonzero,1]
-            plt.plot(plotx,ploty)
-            #plt.scatter(plotx,ploty,marker='x')
+            if np.size(nonzero) > 0:
+                plotx = particlessorted[j,nonzero,0]
+                ploty = particlessorted[j,nonzero,1]
+                plt.plot(plotx,ploty)
+                plt.scatter(plotx,ploty,marker='x',s=3)
         plt.axes().set_aspect('equal')
         plt.draw()
         plt.waitforbuttonpress(0)
