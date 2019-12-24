@@ -70,7 +70,7 @@ def trajectories():
     # Maximum number of particles
     N_max = 300
 
-    method = 'backwardsimple'#'forwardsimple'
+    method = 'forwardsimple' #'forwardsimple'
      
     # Create emtpy array to store particle data, 
     # Number of particles X Number of timesteps X coordinates (x,y)
@@ -117,14 +117,15 @@ def trajectories():
                     #print(distance_bw) 
                     # Find shortest distance and store the argument of the particle in the ith step that corresponds to the closest in j
                     idx_bw = np.argsort(distance_bw)[0]
-
-                    #THERE IS AN INDEX MISMATCH GOING ON HERE, x is shorter, contains only present particles, partially solved
                     
                     # Simplest is to store and overwrite where neccessary
                     particlessorted[idx_bw,i,0] = x[j]
                     particlessorted[idx_bw,i,1] = y[j]
 
-
+    print(particlessorted[:,0,0])
+    print(particlessorted[:,1,0])
+    print(particlessorted[:,2,0])
+    print(particlessorted[:,3,0])
 
     # Create directories
     if not os.path.exists(measurementdir+'trajectories'):
@@ -136,12 +137,15 @@ def trajectories():
     np.savetxt(savename_x,particlessorted[:,:,0])
     np.savetxt(savename_y,particlessorted[:,:,1])
 
-    if verbose: print('Particle positions [m] stored in',savename_x)
+    if verbose: print('Particle trajectories stored in',savename_x)
     
     if plots: 
         plt.figure()
         for j in range(0,N_max,1):
-            plt.plot(particlessorted[j,:,0],particlessorted[j,:,1])
+            nonzero = np.nonzero(particlessorted[j,:,0])[0]
+            plotx = particlessorted[j,nonzero,0]
+            ploty = particlessorted[j,nonzero,1]
+            plt.plot(plotx,ploty)
         plt.show()
        
 
