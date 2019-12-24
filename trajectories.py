@@ -75,13 +75,13 @@ def trajectories():
     N_timesteps = np.size(np.asarray(flistsorted))
 
     # Maximum number of particles
-    N_max = int(1e4)
+    N_max = int(5e2)
 
     # Create emtpy array to store particle data, 
     # Number of particles X Number of timesteps X coordinates (x,y)
     particlessorted = np.zeros((N_max,N_timesteps,2),dtype=float)
     
-    for i in range(0,N_timesteps,1):
+    for i in range(0,10,1):#N_timesteps,1):
         filename = flistsorted[i]
         data = np.loadtxt(positionsdir+filename)
             
@@ -131,7 +131,7 @@ def trajectories():
             elif method == 'fwbw':
                 I = np.linspace(0,N_max-1,N_max,dtype=int)
                 ind_loop = np.linspace(0,N_max-1,N_max,dtype=int) # Indices to include in the calculation
-                Distance_thres = 20 # Distance threshold in pixels
+                distance_thres = 0.02 # Distance threshold in meters
                     
                 # Choose particle i
                 idx_fw = np.zeros(N_max,dtype=int)
@@ -144,15 +144,17 @@ def trajectories():
                         # Distance from particle j in step i-1 to all particles in step i
                         distance_fw = np.sqrt((particlessorted[j,i-1,0]-x)**2+(particlessorted[j,i-1,1]-y)**2)
                         # Find shortest distance and store the argument of the particle in the ith step that corresponds to the closest in j
-                        idx_fw[j] = np.argsort(distance_fw)[0]
-
+                        if np.min(distance_fw) < distance_thres:
+                            idx_fw[j] = np.argsort(distance_fw)[0]
+                        
                 # Calculate backward distances
                 for j in range(0,N,1):
                     # Distance from particle j in step i to all particles in step i-i
                     distance_bw = np.sqrt((particlessorted[:,i-1,0]-x[j])**2+(particlessorted[:,i-1,1]-y[j])**2)
                     
                     # Find shortest distance and store the argument of the particle in the ith step that corresponds to the closest in j
-                    idx_bw[j] = np.argsort(distance_bw)[0]
+                    if np.min(distance_bw) < distance_thres:
+                        idx_bw[j] = np.argsort(distance_bw)[0]
     
                 # Find the parts where we have closed loops, store by index at t0 and t1
                 closed_loop_check = idx_bw[idx_fw]-I
@@ -167,21 +169,40 @@ def trajectories():
                     particlessorted[idx_fw_closedloop[j],i,0] = x[idx_bw_closedloop[j]]
                     particlessorted[idx_fw_closedloop[j],i,1] = y[idx_bw_closedloop[j]]
                 
-                
-                #print(idx_bw_closedloop)
-                # Put unused particles at the back
+                # Find the unused particles
                 indices = np.linspace(0,np.size(x)-1,np.size(x),dtype=int)
-                unused = np.setdiff1d(indices,idx_bw_closedloop)
-                
+                unused_bw = np.setdiff1d(indices,idx_bw_closedloop)
+                unused_fw = np.setdiff1d(indices,idx_fw_closedloop)
+
+                x_unused = x[unused_bw]
+                y_unused = y[unused_bw]
+
+                # Do another forwards step to solve unused particles
+                for j in unused_fw:
+                    # Distance from particle j in step i-1 to all unused particles in step i
+                    distance_fw = np.sqrt((particlessorted[j,i-1,0]-x_unused)**2+(particlessorted[j,i-1,1]-y_unused)**2)
+
+                    # Find shortest distance and store the argument of the particle in the ith s    tep that corresponds to the closest in j
+                    idx_unused_fw = np.argsort(distance_fw)[0]
+
+
+                    # Simplest is to store and overwrite where neccessary
+                    if np.min(distance_fw) < 0.01:
+                        #print(distance_fw[idx_unused_fw])
+                        particlessorted[j,i,0] = x_unused[idx_unused_fw]
+                        particlessorted[j,i,1] = y_unused[idx_unused_fw]
+
+
+
                 #First zero at the end of particlessorted: find last nonzero 
-                nz = np.nonzero(particlessorted[:,i,0])[0][-1]+1
-                print(N_used)
-                
-                particlessorted[N_used:N_used+np.size(unused),i,0] = x[unused]
-                particlessorted[N_used:N_used+np.size(unused),i,1] = y[unused]
-                     
-                # Number of used slots
-                N_used += np.size(unused)
+                #nz = np.nonzero(particlessorted[:,i,0])[0][-1]+1
+                #print(N_used)
+                #
+                #particlessorted[N_used:N_used+np.size(unused),i,0] = x[unused]
+                #particlessorted[N_used:N_used+np.size(unused),i,1] = y[unused]
+                #     
+                ## Number of used slots
+                #N_used += np.size(unused)
                 
                 # Check for distances between found particles, if distance is too large then particles are not the same
                 #Distances = np.sqrt((Particles[:,t,0]-Particles[:,t+1,0])**2+(Particles[:,t,1]-Particles[:,t+1,1])**2)
@@ -199,8 +220,8 @@ def trajectories():
                 
                 #print(Particles[nz:nz+1+np.size(q),t+1,0])
     
-    print(particlessorted[250,:,0])
-    print(particlessorted[251,:,0])
+#    print(particlessorted[250,:,0])
+#    print(particlessorted[251,:,0])
     
     # Create directories
     if not os.path.exists(measurementdir+'trajectories'):
@@ -216,12 +237,13 @@ def trajectories():
     
     if plots: 
         plt.figure()
-        for j in range(0,1000,1):
+        for j in range(0,N_max,1):
             nonzero = np.nonzero(particlessorted[j,:,0])[0]
             plotx = particlessorted[j,nonzero,0]
             ploty = particlessorted[j,nonzero,1]
             plt.plot(plotx,ploty)
             plt.scatter(plotx,ploty,marker='x')
+        plt.axes().set_aspect('equal')
         plt.draw()
         plt.waitforbuttonpress(0)
         plt.close()
