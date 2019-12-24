@@ -22,6 +22,7 @@ def trajectories():
     # Argument parser
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', action='store_true', help='Set verbosity')
+    parser.add_argument('-m', action='store', help='Select method: fw (forward), bw (backward), fwbw (forward+backward)')
     parser.add_argument('-f', help="settings file")
     args = parser.parse_args()
    
@@ -30,6 +31,12 @@ def trajectories():
         verbose = True
         print("verbosity turned on")
 
+    if not args.m:
+        print('Method not chosen, setting method = forward')
+        method = 'fw'
+    else:
+        method = args.m
+    print(method)
 
     # Reading settings file
     f = open(args.f, 'r')
@@ -70,8 +77,6 @@ def trajectories():
     # Maximum number of particles
     N_max = 300
 
-    method = 'forwardsimple' #'forwardsimple'
-     
     # Create emtpy array to store particle data, 
     # Number of particles X Number of timesteps X coordinates (x,y)
     particlessorted = np.zeros((N_max,N_timesteps,2),dtype=float)
@@ -94,7 +99,7 @@ def trajectories():
         # All other files do have to be sorted
         else:
             # Simple nearest neighbours forward: loop over particles in i-1, find closest particle in i
-            if method == 'forwardsimple':
+            if method == 'fw':
                 # Number of particles in previous timestep
                 Nprev = np.count_nonzero(particlessorted[:,i-1,0])
 
@@ -109,7 +114,7 @@ def trajectories():
                     particlessorted[j,i,0] = x[idx_fw]
                     particlessorted[j,i,1] = y[idx_fw]
             
-            elif method == 'backwardsimple':
+            elif method == 'bw':
                 for j in range(0,N,1):
                     # Distance from particle j in step i to all particles in step i-i
                     distance_bw = np.sqrt((particlessorted[:,i-1,0]-x[j])**2+(particlessorted[:,i-1,1]-y[j])**2)
@@ -122,10 +127,10 @@ def trajectories():
                     particlessorted[idx_bw,i,0] = x[j]
                     particlessorted[idx_bw,i,1] = y[j]
 
-    print(particlessorted[:,0,0])
-    print(particlessorted[:,1,0])
-    print(particlessorted[:,2,0])
-    print(particlessorted[:,3,0])
+    #print(particlessorted[:,0,0])
+    #print(particlessorted[:,1,0])
+    #print(particlessorted[:,2,0])
+    #print(particlessorted[:,3,0])
 
     # Create directories
     if not os.path.exists(measurementdir+'trajectories'):
