@@ -76,7 +76,7 @@ def trajectories():
     N_timesteps = np.size(np.asarray(flistsorted))
 
     # Maximum number of particles
-    N_max = int(5e2)
+    N_max = int(5e3)
 
     # Create emtpy array to store particle data, 
     # Number of particles X Number of timesteps X coordinates (x,y)
@@ -162,9 +162,6 @@ def trajectories():
                 idx_fw_closedloop = np.where(closed_loop_check==0)[0] # The positions in idx_fw for which we have found a closed loop
                 idx_bw_closedloop = idx_fw[idx_fw_closedloop] # The positions they point to
                
-                #print(idx_bw[idx_fw])
-                #print(closed_loop_check)
-
                 # Add to sorted particles
                 for j in range(0,np.size(idx_fw_closedloop),1):
                     particlessorted[idx_fw_closedloop[j],i,0] = x[idx_bw_closedloop[j]]
@@ -178,8 +175,6 @@ def trajectories():
                 x_unused = x[unused_bw]
                 y_unused = y[unused_bw]
 
-                #print(unused_fw)
-
                 # Do another forwards step to solve unused particles
                 for j in unused_fw:
                     if particlessorted[j,i-1,0] != 0:
@@ -190,42 +185,24 @@ def trajectories():
                         idx_unused_fw = np.argsort(distance_fw)[0]
 
                         # Simplest is to store and overwrite where neccessary
-                        if np.min(distance_fw) < 0.01:
-                            #print(distance_fw[idx_unused_fw])
+                        if np.min(distance_fw) < distance_thres:
                             particlessorted[j,i,0] = x_unused[idx_unused_fw]
                             particlessorted[j,i,1] = y_unused[idx_unused_fw]
-                            #print(x_unused[idx_unused_fw])
 
-                #print(particlessorted[:,i,0])
-
+                unused = np.nonzero(np.isin(x,particlessorted[:,i,0],invert=True))
+                
                 #First zero at the end of particlessorted: find last nonzero 
-                #nz = np.nonzero(particlessorted[:,i,0])[0][-1]+1
-                #print(N_used)
-                #
-                #particlessorted[N_used:N_used+np.size(unused),i,0] = x[unused]
-                #particlessorted[N_used:N_used+np.size(unused),i,1] = y[unused]
-                #     
-                ## Number of used slots
-                #N_used += np.size(unused)
+                nz = np.nonzero(particlessorted[:,i,0])[0][-1]+1
+                print(N_used)
                 
-                # Check for distances between found particles, if distance is too large then particles are not the same
-                #Distances = np.sqrt((Particles[:,t,0]-Particles[:,t+1,0])**2+(Particles[:,t,1]-Particles[:,t+1,1])**2)
-                #q = np.where(Distances>=Distance_thres)[0]
-                
-                
-                #print('nz, q',nz,q)
-                #print(Particles[nz+1:nz+1+np.size(q),t+1,0],Particles[q,t+1,0])
-                
-                # Put discrepant particles at the back
-                #Particles[nz:nz+np.size(q),t+1,:] = Particles[q,t+1,:]
-                
-                # Remove particles from previous locations:
-                #Particles[q,t+1,:] = 0
-                
-                #print(Particles[nz:nz+1+np.size(q),t+1,0])
-    
-#    print(particlessorted[250,:,0])
-#    print(particlessorted[251,:,0])
+                particlessorted[N_used:N_used+np.size(unused),i,0] = x[unused]
+                particlessorted[N_used:N_used+np.size(unused),i,1] = y[unused]
+                     
+                # Number of used slots
+                N_used += np.size(unused)
+   
+    #print(particlessorted[:,5,0])
+    #print(particlessorted[:,6,0])
     
     # Create directories
     if not os.path.exists(measurementdir+'trajectories'):
@@ -246,7 +223,7 @@ def trajectories():
             plotx = particlessorted[j,nonzero,0]
             ploty = particlessorted[j,nonzero,1]
             plt.plot(plotx,ploty)
-            plt.scatter(plotx,ploty,marker='x')
+            #plt.scatter(plotx,ploty,marker='x')
         plt.axes().set_aspect('equal')
         plt.draw()
         plt.waitforbuttonpress(0)
