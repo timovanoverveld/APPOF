@@ -15,7 +15,8 @@ import argparse
 import fnmatch
 import matplotlib.pyplot as plt
 #from images2positions_functions import *
-
+import warnings
+warnings.filterwarnings("ignore")
 
 ############################################################################
 def trajectories():
@@ -81,7 +82,7 @@ def trajectories():
     # Number of particles X Number of timesteps X coordinates (x,y)
     particlessorted = np.zeros((N_max,N_timesteps,2),dtype=float)
     
-    for i in range(0,10,1):#N_timesteps,1):
+    for i in range(0,N_timesteps,1):
         filename = flistsorted[i]
         data = np.loadtxt(positionsdir+filename)
             
@@ -177,22 +178,25 @@ def trajectories():
                 x_unused = x[unused_bw]
                 y_unused = y[unused_bw]
 
+                #print(unused_fw)
+
                 # Do another forwards step to solve unused particles
                 for j in unused_fw:
-                    # Distance from particle j in step i-1 to all unused particles in step i
-                    distance_fw = np.sqrt((particlessorted[j,i-1,0]-x_unused)**2+(particlessorted[j,i-1,1]-y_unused)**2)
+                    if particlessorted[j,i-1,0] != 0:
+                        # Distance from particle j in step i-1 to all unused particles in step i
+                        distance_fw = np.sqrt((particlessorted[j,i-1,0]-x_unused)**2+(particlessorted[j,i-1,1]-y_unused)**2)
 
-                    # Find shortest distance and store the argument of the particle in the ith s    tep that corresponds to the closest in j
-                    idx_unused_fw = np.argsort(distance_fw)[0]
+                        # Find shortest distance and store the argument of the particle in the ith s    tep that corresponds to the closest in j
+                        idx_unused_fw = np.argsort(distance_fw)[0]
 
+                        # Simplest is to store and overwrite where neccessary
+                        if np.min(distance_fw) < 0.01:
+                            #print(distance_fw[idx_unused_fw])
+                            particlessorted[j,i,0] = x_unused[idx_unused_fw]
+                            particlessorted[j,i,1] = y_unused[idx_unused_fw]
+                            #print(x_unused[idx_unused_fw])
 
-                    # Simplest is to store and overwrite where neccessary
-                    if np.min(distance_fw) < 0.01:
-                        #print(distance_fw[idx_unused_fw])
-                        particlessorted[j,i,0] = x_unused[idx_unused_fw]
-                        particlessorted[j,i,1] = y_unused[idx_unused_fw]
-
-
+                #print(particlessorted[:,i,0])
 
                 #First zero at the end of particlessorted: find last nonzero 
                 #nz = np.nonzero(particlessorted[:,i,0])[0][-1]+1
