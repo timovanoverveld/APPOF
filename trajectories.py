@@ -75,7 +75,7 @@ def trajectories():
     N_timesteps = np.size(np.asarray(flistsorted))
 
     # Maximum number of particles
-    N_max = 300
+    N_max = int(1e4)
 
     # Create emtpy array to store particle data, 
     # Number of particles X Number of timesteps X coordinates (x,y)
@@ -90,11 +90,13 @@ def trajectories():
         
         # Number of detected particles
         N = np.count_nonzero(x)
-        
+
         # First file does not have to be sorted
         if flistsorted.index(filename) == 0:
             particlessorted[0:np.size(x),0,0] = x
             particlessorted[0:np.size(y),0,1] = y
+            N_used = np.size(x)
+            nz = np.size(x)
 
         # All other files do have to be sorted
         else:
@@ -152,28 +154,39 @@ def trajectories():
                     # Find shortest distance and store the argument of the particle in the ith step that corresponds to the closest in j
                     idx_bw[j] = np.argsort(distance_bw)[0]
     
-                #print(idx_fw,idx_bw)
                 # Find the parts where we have closed loops, store by index at t0 and t1
                 closed_loop_check = idx_bw[idx_fw]-I
-                a = np.where(closed_loop_check==0)[0] # The positions in idx_fw for which we have found a closed loop
-                b = idx_fw[a] # The positions they point to
+                idx_fw_closedloop = np.where(closed_loop_check==0)[0] # The positions in idx_fw for which we have found a closed loop
+                idx_bw_closedloop = idx_fw[idx_fw_closedloop] # The positions they point to
                
-                print(idx_bw[idx_fw])
-                print(closed_loop_check)
-                print(a,np.size(a))
-                print(b,np.size(b))
+                #print(idx_bw[idx_fw])
+                #print(closed_loop_check)
 
                 # Add to sorted particles
-                for j in range(0,np.size(a),1):
-                    particlessorted[a[j],i,0] = x[b[j]]
-                    particlessorted[a[j],i,1] = y[b[j]]
-                 
+                for j in range(0,np.size(idx_fw_closedloop),1):
+                    particlessorted[idx_fw_closedloop[j],i,0] = x[idx_bw_closedloop[j]]
+                    particlessorted[idx_fw_closedloop[j],i,1] = y[idx_bw_closedloop[j]]
+                
+                
+                #print(idx_bw_closedloop)
+                # Put unused particles at the back
+                indices = np.linspace(0,np.size(x)-1,np.size(x),dtype=int)
+                unused = np.setdiff1d(indices,idx_bw_closedloop)
+                
+                #First zero at the end of particlessorted: find last nonzero 
+                nz = np.nonzero(particlessorted[:,i,0])[0][-1]+1
+                print(N_used)
+                
+                particlessorted[N_used:N_used+np.size(unused),i,0] = x[unused]
+                particlessorted[N_used:N_used+np.size(unused),i,1] = y[unused]
+                     
+                # Number of used slots
+                N_used += np.size(unused)
+                
                 # Check for distances between found particles, if distance is too large then particles are not the same
                 #Distances = np.sqrt((Particles[:,t,0]-Particles[:,t+1,0])**2+(Particles[:,t,1]-Particles[:,t+1,1])**2)
                 #q = np.where(Distances>=Distance_thres)[0]
                 
-                #First zero in particles: search backwards, find last nonzero 
-                #nz = np.nonzero(Particles[:,t+1,0])[0][-1] # Last nonzero, so new particle should be placed in 1 further (hence the +1)
                 
                 #print('nz, q',nz,q)
                 #print(Particles[nz+1:nz+1+np.size(q),t+1,0],Particles[q,t+1,0])
@@ -186,10 +199,9 @@ def trajectories():
                 
                 #print(Particles[nz:nz+1+np.size(q),t+1,0])
     
-    print(particlessorted[:,0,0])
-    print(particlessorted[:,1,0])
-    print(particlessorted[:,-1,0])
-
+    print(particlessorted[250,:,0])
+    print(particlessorted[251,:,0])
+    
     # Create directories
     if not os.path.exists(measurementdir+'trajectories'):
         os.makedirs(measurementdir+'trajectories')
@@ -204,7 +216,7 @@ def trajectories():
     
     if plots: 
         plt.figure()
-        for j in range(0,N_max,1):
+        for j in range(0,1000,1):
             nonzero = np.nonzero(particlessorted[j,:,0])[0]
             plotx = particlessorted[j,nonzero,0]
             ploty = particlessorted[j,nonzero,1]
