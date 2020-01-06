@@ -201,11 +201,6 @@ def main():
         # Find lines in pixel values
         lines = findlines(np.uint8(image_noparticles/16),linespacingpx,centerpx,plot=False)
 
-        #Convert line positions (px -> m projected)
-        xprojected = pix2realx(lines)
-        #Use Number of lines that we known that are there, from calibration B
-        xreal, Nlines = clusterlines(lines,linespacing,Nlines=NlinesB)
-        
         if verbose: print('Line positions found')
 
         # Correct for the particles that are not separated on the first try
@@ -213,12 +208,13 @@ def main():
 
         # Obtain the positions of the particles in pixels
         positionspix = particlepositions(imagecorrected,markerscorrected)
-        
-        # Convert to projected real world coordinates
-        positions = np.asarray([pix2realx(positionspix[:,0]),pix2realy(positionspix[:,1])])
 
         if verbose: print('Particle positions found [px]')
 
+        #Convert line positions (px -> m projected)
+        xprojected = pix2realx(lines)
+        #Use Number of lines that we known that are there, from calibration B
+        xreal, Nlines = clusterlines(lines,linespacing,Nlines=NlinesB)
 
         if reconstruction == True:
             #######################################
@@ -272,13 +268,13 @@ def main():
             plt.waitforbuttonpress(0)
             plt.close()
 
-            if reconstruction: 
-                plt.figure(figsize=(12,8))
-                plt.scatter(xprojected,0*xprojected,color='blue',label='projected positions')
-                plt.scatter(xreal,0*xreal,color='red',label='real positions')
-                x = np.linspace(np.min((np.min(xprojected),np.min(xreal))),np.max((np.max(xprojected),np.max(xreal))),100)
-                plt.fill_between(x,0,H(x),color='blue',alpha=0.1)
+            plt.figure(figsize=(12,8))
+            plt.scatter(xprojected,0*xprojected,color='blue',label='projected positions')
+            plt.scatter(xreal,0*xreal,color='red',label='real positions')
+            x = np.linspace(np.min((np.min(xprojected),np.min(xreal))),np.max((np.max(xprojected),np.max(xreal))),100)
+            plt.fill_between(x,0,H(x),color='blue',alpha=0.1)
         
+            if reconstructed: 
                 data = (xprojected,H,xc[0],Hc[0])
                 xw = optimization.root(intersection,xprojected,args=data)
                 xw = xw.x
