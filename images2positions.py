@@ -208,8 +208,9 @@ def main():
 
         # Obtain the positions of the particles in pixels
         positionspix = particlepositions(imagecorrected,markerscorrected)
+        positions    = np.asarray([pix2realx(positionspix[:,0]),pix2realy(positionspix[:,1]))
 
-        if verbose: print('Particle positions found [px]')
+        if verbose: print('Particle positions found [px] and projected [m]')
 
         #Convert line positions (px -> m projected)
         xprojected = pix2realx(lines)
