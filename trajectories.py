@@ -76,6 +76,9 @@ def trajectories():
 
     # Maximum number of particles
     N_max = int(5e3)
+    
+    # Distance threshold in meters
+    distance_thres = 0.01
 
     # Create emtpy array to store particle data, 
     # Number of particles X Number of timesteps X coordinates (x,y)
@@ -110,11 +113,12 @@ def trajectories():
                     distance_fw = np.sqrt((particlessorted[j,i-1,0]-x)**2+(particlessorted[j,i-1,1]-y)**2)
                      
                     # Find shortest distance and store the argument of the particle in the ith step that corresponds to the closest in j
-                    idx_fw = np.argsort(distance_fw)[0]
+                    if np.min(distance_fw) < distance_thres:
+                        idx_fw = np.argsort(distance_fw)[0]
                    
-                    # Simplest is to store and overwrite where neccessary
-                    particlessorted[j,i,0] = x[idx_fw]
-                    particlessorted[j,i,1] = y[idx_fw]
+                        # Simplest is to store and overwrite where neccessary
+                        particlessorted[j,i,0] = x[idx_fw]
+                        particlessorted[j,i,1] = y[idx_fw]
             
             elif method == 'bw':
                 for j in range(0,N,1):
@@ -122,16 +126,16 @@ def trajectories():
                     distance_bw = np.sqrt((particlessorted[:,i-1,0]-x[j])**2+(particlessorted[:,i-1,1]-y[j])**2)
                     
                     # Find shortest distance and store the argument of the particle in the ith step that corresponds to the closest in j
-                    idx_bw = np.argsort(distance_bw)[0]
+                    if np.min(distance_bw) < distance_thres:
+                        idx_bw = np.argsort(distance_bw)[0]
                     
-                    # Simplest is to store and overwrite where neccessary
-                    particlessorted[idx_bw,i,0] = x[j]
-                    particlessorted[idx_bw,i,1] = y[j]
+                        # Simplest is to store and overwrite where neccessary
+                        particlessorted[idx_bw,i,0] = x[j]
+                        particlessorted[idx_bw,i,1] = y[j]
 
             elif method == 'fwbw':
                 I = np.linspace(0,N_max-1,N_max,dtype=int)
                 ind_loop = np.linspace(0,N_max-1,N_max,dtype=int) # Indices to include in the calculation
-                distance_thres = 0.01 # Distance threshold in meters
                     
                 # Choose particle i
                 idx_fw = np.zeros(N_max,dtype=int)
