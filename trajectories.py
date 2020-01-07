@@ -106,10 +106,8 @@ def trajectories():
             # Simple nearest neighbours forward: loop over particles in i-1, find closest particle in i
             if method == 'fw':
                 # Number of particles in previous timestep
-                #Nprev = np.count_nonzero(particlessorted[:,i-1,0])
                 Nonzeroprev = np.nonzero(particlessorted[:,i-1,0])[0]
                 
-                #for j in range(0,Nprev,1):
                 for j in Nonzeroprev:
                     # Distance from particle j in step i-1 to all particles in step i
                     distance_fw = np.sqrt((particlessorted[j,i-1,0]-x)**2+(particlessorted[j,i-1,1]-y)**2)
@@ -124,13 +122,15 @@ def trajectories():
                     
             
             elif method == 'bw':
+                Nonzeroprev = np.nonzero(particlessorted[:,i-1,0])[0]
                 for j in range(0,N,1):
                     # Distance from particle j in step i to all particles in step i-i
-                    distance_bw = np.sqrt((particlessorted[:,i-1,0]-x[j])**2+(particlessorted[:,i-1,1]-y[j])**2)
+                    distance_bw = np.sqrt((particlessorted[Nonzeroprev,i-1,0]-x[j])**2+(particlessorted[Nonzeroprev,i-1,1]-y[j])**2)
                     
                     # Find shortest distance and store the argument of the particle in the ith step that corresponds to the closest in j
                     if np.min(distance_bw) < distance_thres:
-                        idx_bw = np.argsort(distance_bw)[0]
+                        idx_nonzero = np.argsort(distance_bw)[0]
+                        idx_bw = Nonzeroprev[idx_nonzero]
                     
                         # Simplest is to store and overwrite where neccessary
                         particlessorted[idx_bw,i,0] = x[j]
