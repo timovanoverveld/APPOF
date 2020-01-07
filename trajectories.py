@@ -75,7 +75,7 @@ def trajectories():
     N_timesteps = np.size(np.asarray(flistsorted))
 
     # Maximum number of particles
-    N_max = int(5e3)
+    N_max = int(5e2)
     
     # Distance threshold in meters
     distance_thres = 0.01
@@ -106,19 +106,22 @@ def trajectories():
             # Simple nearest neighbours forward: loop over particles in i-1, find closest particle in i
             if method == 'fw':
                 # Number of particles in previous timestep
-                Nprev = np.count_nonzero(particlessorted[:,i-1,0])
-
-                for j in range(0,Nprev,1):
+                #Nprev = np.count_nonzero(particlessorted[:,i-1,0])
+                Nonzeroprev = np.nonzero(particlessorted[:,i-1,0])[0]
+                
+                #for j in range(0,Nprev,1):
+                for j in Nonzeroprev:
                     # Distance from particle j in step i-1 to all particles in step i
                     distance_fw = np.sqrt((particlessorted[j,i-1,0]-x)**2+(particlessorted[j,i-1,1]-y)**2)
                      
                     # Find shortest distance and store the argument of the particle in the ith step that corresponds to the closest in j
                     if np.min(distance_fw) < distance_thres:
                         idx_fw = np.argsort(distance_fw)[0]
-                   
+                        
                         # Simplest is to store and overwrite where neccessary
                         particlessorted[j,i,0] = x[idx_fw]
                         particlessorted[j,i,1] = y[idx_fw]
+                    
             
             elif method == 'bw':
                 for j in range(0,N,1):
@@ -132,6 +135,7 @@ def trajectories():
                         # Simplest is to store and overwrite where neccessary
                         particlessorted[idx_bw,i,0] = x[j]
                         particlessorted[idx_bw,i,1] = y[j]
+
 
             elif method == 'fwbw':
                 I = np.linspace(0,N_max-1,N_max,dtype=int)
@@ -203,9 +207,6 @@ def trajectories():
                 # Number of used slots
                 N_used += np.size(unused)
    
-    #print(particlessorted[:,5,0])
-    #print(particlessorted[:,6,0])
-    
     # Create directories
     if not os.path.exists(measurementdir+'trajectories'):
         os.makedirs(measurementdir+'trajectories')
