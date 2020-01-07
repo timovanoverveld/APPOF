@@ -19,75 +19,26 @@ warnings.filterwarnings("ignore")
 def distributions():
     # Argument parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', action='store_true', help='File')
+    parser.add_argument('-f', type=str, help='File')
     parser.add_argument('-r', action='store_true', help='Radial distribution function values')
     parser.add_argument('-p', action='store_true', help='Enable plotting')
     args = parser.parse_args()
    
-    #Fake data
-    N = 120 # Number of particles in domain
+    #Read data
+
+    if args.f:
+        X, Y = np.loadtxt(args.f)
+    else:
+        try:
+            X, Y = np.loadtxt('fakepattern.dat')
+        except:
+            print('No input file found')
+            quit()
+
+    N = np.size(X) # Number of particles in domain
     L = 1   # Size of (square) domain
     M = L/2 # Value used for Modulo/shortest distance
     
-    rho = N/L**2 # Average particle density (#/m^2)
-    
-    dist = 'lines'
-    noise = True
-    if dist == 'random':
-        # Random 2D distribution
-        X = L*np.random.rand(N) # Random X coordinates
-        Y = L*np.random.rand(N) # Random Y coordinates
-    
-    elif dist == 'square':
-        # Square ordered 2D distribution
-        X = np.tile(np.linspace(0,L,N/10),11)
-        Y = np.sort(X)
-    
-    elif dist == 'lines':
-        # Line ordered 2D distribution
-        Nrows = 6 # Number of rows, N should be divisible by this
-        if N/Nrows%1 != 0:
-            print('Error in number of rows')
-            sys.exit()
-    
-        # Lay down the particles in a grid
-        X = np.tile(np.linspace(L*Nrows/(2*N),L*(1-Nrows/(2*N)),N/Nrows),Nrows)
-        Y = np.sort(np.tile(np.linspace(L/(2*Nrows),L*(1-1/(2*Nrows)),Nrows),int(N/Nrows)))
-    
-        print('Interparticle distance =',L/(N/Nrows))
-        print('Interline distance =',L/Nrows)
-    
-    elif dist == 'fluid':
-        radius = 0.025 # Sphere radius
-        X = L*np.random.rand(1)
-        Y = L*np.random.rand(1)
-    
-        while np.size(X)<N:
-            x = L*np.random.rand()
-            y = L*np.random.rand()
-    
-            distances = np.sqrt((X-x)**2+(Y-y)**2)
-            if np.all(distances > radius):
-                X = np.append(X,x)
-                Y = np.append(Y,y)
-    
-        print(np.size(X))
-    
-    # Add noise
-    if noise:
-        A = 1e-2
-        B = 1e-2
-        X = X + A*2*(np.random.rand(np.size(X))-0.5)
-        Y = Y + B*2*(np.random.rand(np.size(Y))-0.5)
-    
-    plt.figure(figsize=(12,12))
-    plt.scatter(X,Y)
-    plt.xlim(0,L)
-    plt.ylim(0,L)
-    plt.grid()
-    plt.axes().set_aspect('equal')
-    plt.show()
-
 
     # Fill arrays with all distances and angles between particles
 
@@ -115,7 +66,9 @@ def distributions():
     
                 Angles[i,j]  = np.arctan2(dy,dx)
     
-    # Calculate the combined correlation function in 1 step
+
+
+    # Calculate the correlation functions
 
     # Binwidth, determines the smoothness
     dr   = L/2e2
@@ -160,10 +113,10 @@ def distributions():
         for j in range(0,np.size(th),1):
             c = np.multiply(a[:,:,i],b[:,:,j])
     
-            g[i,j] = np.sum(c)/r[i] #rho*N*r[i]*dr*dth)
+            g[i,j] = np.sum(c)/r[i]
     
     
-    g = g / (rho*N*dr*dth)
+    g = g / (N**2/L**2*dr*dth)
     
     print('Calculations are done')
     
@@ -181,17 +134,19 @@ def distributions():
     plt.ylabel('$r$')
     plt.ylim(0)
     plt.colorbar()
-    # plt.grid()
-    plt.show()
+    plt.draw()
+    plt.waitforbuttonpress(0)
+    plt.close()
     
-    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'),figsize=(12,12))
-    plt.contourf(T,R,glog,cmap='bwr',levels=100,vmin=-np.max(glog),vmax=np.max(glog))
-    plt.xlabel('$\\theta$')
-    plt.ylabel('$r$')
-    plt.ylim(0)
-    plt.colorbar()
-    # plt.grid()
-    plt.show()
+    #fig, ax = plt.subplots(subplot_kw=dict(projection='polar'),figsize=(12,12))
+    #plt.contourf(T,R,glog,cmap='bwr',levels=100,vmin=-np.max(glog),vmax=np.max(glog))
+    #plt.xlabel('$\\theta$')
+    #plt.ylabel('$r$')
+    #plt.ylim(0)
+    #plt.colorbar()
+    #plt.draw()
+    #plt.waitforbuttonpress(0)
+    #plt.close()
     
     plt.figure(figsize=(12,8))
     xdir = np.argmin(abs(th))
@@ -202,7 +157,9 @@ def distributions():
     plt.plot(R[x],g[x],label='y-direction')
     plt.grid()
     plt.legend()
-    plt.show()
+    plt.draw()
+    plt.waitforbuttonpress(0)
+    plt.close()
 
     
     print('Done')
