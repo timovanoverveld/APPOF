@@ -76,6 +76,9 @@ def trajectories():
 
     # Maximum number of particles
     N_max = int(5e3)
+    
+    # Distance threshold in meters
+    distance_thres = 1e-2
 
     # Create emtpy array to store particle data, 
     # Number of particles X Number of timesteps X coordinates (x,y)
@@ -103,35 +106,62 @@ def trajectories():
             # Simple nearest neighbours forward: loop over particles in i-1, find closest particle in i
             if method == 'fw':
                 # Number of particles in previous timestep
-                Nprev = np.count_nonzero(particlessorted[:,i-1,0])
-
-                for j in range(0,Nprev,1):
+                Nonzeroprev = np.nonzero(particlessorted[:,i-1,0])[0]
+                
+                for j in Nonzeroprev:
                     # Distance from particle j in step i-1 to all particles in step i
                     distance_fw = np.sqrt((particlessorted[j,i-1,0]-x)**2+(particlessorted[j,i-1,1]-y)**2)
                      
                     # Find shortest distance and store the argument of the particle in the ith step that corresponds to the closest in j
-                    idx_fw = np.argsort(distance_fw)[0]
-                   
-                    # Simplest is to store and overwrite where neccessary
-                    particlessorted[j,i,0] = x[idx_fw]
-                    particlessorted[j,i,1] = y[idx_fw]
+                    if np.min(distance_fw) < distance_thres:
+                        idx_fw = np.argsort(distance_fw)[0]
+                        
+                        # Simplest is to store and overwrite where neccessary
+                        particlessorted[j,i,0] = x[idx_fw]
+                        particlessorted[j,i,1] = y[idx_fw]
+
+                unused = np.nonzero(np.isin(x,particlessorted[:,i,0],invert=True))[0]
+                
+                #First zero at the end of particlessorted: find last nonzero 
+                nz = np.nonzero(particlessorted[:,i,0])[0][-1]+1
+                
+                particlessorted[N_used:N_used+np.size(unused),i,0] = x[unused]
+                particlessorted[N_used:N_used+np.size(unused),i,1] = y[unused]
+                
+                # Number of used slots
+                N_used += np.size(unused)
+                 
             
             elif method == 'bw':
+                Nonzeroprev = np.nonzero(particlessorted[:,i-1,0])[0]
                 for j in range(0,N,1):
                     # Distance from particle j in step i to all particles in step i-i
-                    distance_bw = np.sqrt((particlessorted[:,i-1,0]-x[j])**2+(particlessorted[:,i-1,1]-y[j])**2)
+                    distance_bw = np.sqrt((particlessorted[Nonzeroprev,i-1,0]-x[j])**2+(particlessorted[Nonzeroprev,i-1,1]-y[j])**2)
                     
                     # Find shortest distance and store the argument of the particle in the ith step that corresponds to the closest in j
-                    idx_bw = np.argsort(distance_bw)[0]
+                    if np.min(distance_bw) < distance_thres:
+                        idx_nonzero = np.argsort(distance_bw)[0]
+                        idx_bw = Nonzeroprev[idx_nonzero]
                     
-                    # Simplest is to store and overwrite where neccessary
-                    particlessorted[idx_bw,i,0] = x[j]
-                    particlessorted[idx_bw,i,1] = y[j]
+                        # Simplest is to store and overwrite where neccessary
+                        particlessorted[idx_bw,i,0] = x[j]
+                        particlessorted[idx_bw,i,1] = y[j]
+                
+                unused = np.nonzero(np.isin(x,particlessorted[:,i,0],invert=True))[0]
+                
+                #First zero at the end of particlessorted: find last nonzero 
+                nz = np.nonzero(particlessorted[:,i,0])[0][-1]+1
+                
+                particlessorted[N_used:N_used+np.size(unused),i,0] = x[unused]
+                particlessorted[N_used:N_used+np.size(unused),i,1] = y[unused]
+                
+                # Number of used slots
+                N_used += np.size(unused)
+
 
             elif method == 'fwbw':
                 I = np.linspace(0,N_max-1,N_max,dtype=int)
                 ind_loop = np.linspace(0,N_max-1,N_max,dtype=int) # Indices to include in the calculation
-                distance_thres = 0.01 # Distance threshold in meters
                     
                 # Choose particle i
                 idx_fw = np.zeros(N_max,dtype=int)
@@ -199,18 +229,16 @@ def trajectories():
                 # Number of used slots
                 N_used += np.size(unused)
    
-    #print(particlessorted[:,5,0])
-    #print(particlessorted[:,6,0])
-    
     # Create directories
     if not os.path.exists(measurementdir+'trajectories'):
         os.makedirs(measurementdir+'trajectories')
 
-    # Saving the data
+
+    # Saving the (nonzero) data
     savename_x = measurementdir+'trajectories/'+method+'_x.dat'
     savename_y = measurementdir+'trajectories/'+method+'_y.dat'
-    np.savetxt(savename_x,particlessorted[:,:,0])
-    np.savetxt(savename_y,particlessorted[:,:,1])
+    np.savetxt(savename_x,particlessorted[0:N_used,:,0])
+    np.savetxt(savename_y,particlessorted[0:N_used,:,1])
 
     if verbose: print('Particle trajectories stored in',savename_x)
     
