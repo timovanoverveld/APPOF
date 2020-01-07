@@ -233,11 +233,12 @@ def trajectories():
     if not os.path.exists(measurementdir+'trajectories'):
         os.makedirs(measurementdir+'trajectories')
 
-    # Saving the data
+
+    # Saving the (nonzero) data
     savename_x = measurementdir+'trajectories/'+method+'_x.dat'
     savename_y = measurementdir+'trajectories/'+method+'_y.dat'
-    np.savetxt(savename_x,particlessorted[:,:,0])
-    np.savetxt(savename_y,particlessorted[:,:,1])
+    np.savetxt(savename_x,particlessorted[0:N_used,:,0])
+    np.savetxt(savename_y,particlessorted[0:N_used,:,1])
 
     if verbose: print('Particle trajectories stored in',savename_x)
     
