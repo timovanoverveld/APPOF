@@ -93,13 +93,19 @@ def distributions():
     
     th  = np.linspace(-np.pi,np.pi,(2*np.pi)/dxth+1) # Radii to calculate g
     
-    a = np.empty((N,N,np.size(r)),dtype=float)
+    a = np.empty((N,N,np.size(r)), dtype=float)
     b = np.empty((N,N,np.size(th)),dtype=float)
-    g = np.empty((np.size(r),np.size(th)),dtype=float)
     
+    gr  = np.empty(np.size(r),              dtype=float)
+    gth = np.empty(np.size(th),             dtype=float)
+    g   = np.empty((np.size(r),np.size(th)),dtype=float)
+    
+
     for i in range(0,np.size(r),1):
         a[:,:,i] = np.logical_and(r[i]-dr/2<Distances,Distances<r[i]+dr/2)
-    
+
+        gr[i] = np.sum(a)*L**2/(N**2*2*np.pi*r[i]*dr)
+
     for j in range(0,np.size(th),1):
     
         b[:,:,j] = np.logical_and(th[j]-dth/2<Angles,Angles<th[j]+dth/2)
@@ -109,18 +115,38 @@ def distributions():
         if th[j]+dth/2 > np.pi:
             b[:,:,j] += np.logical_and(th[j]-dth/2-2*np.pi<Angles,Angles<th[j]+dth/2-2*np.pi)
     
+        gth[j] = np.sum(b)*L**2*2*np.pi/(N**2*dth)
+
     for i in range(0,np.size(r),1):
         for j in range(0,np.size(th),1):
             c = np.multiply(a[:,:,i],b[:,:,j])
     
-            g[i,j] = np.sum(c)/r[i]
+            g[i,j] = np.sum(c)*L**2/(N**2*r[i]*dr*dth)
     
-    
-    g = g / (N**2/L**2*dr*dth)
     
     print('Calculations are done')
     
     # Plot
+
+    fig = plt.figure(figsize=(12,8))
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122, polar=True)
+    
+    ax1.plot(r,gr)
+    ax1.set_xlabel('$r$')
+    ax1.set_ylabel('$g(r)$')
+    ax1.grid()
+    ax1.set_xlim(-0.01,M)
+   
+    ax2.plot(th,gth)
+    ax2.set_xlabel('$\\theta$')
+    ax2.set_ylabel('$g(\\theta)$')
+
+    plt.draw()
+    plt.waitforbuttonpress(0)
+    plt.close()
+
+    quit()
     T,R = np.meshgrid(th,r)
     
     print(np.mean(g))
