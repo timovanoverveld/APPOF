@@ -57,7 +57,7 @@ def main():
 
     # Channel width [m]
     channelwidth = settings['channelwidth']
-    
+
     # Mean water height [m]
     Hmean = settings['Hmean']
 
@@ -108,7 +108,7 @@ def main():
 
     # Measurement list
     calClist = [measurementdir + i for i in os.listdir(measurementdir) if i.endswith(".tif")]
-    
+
     if np.size(calClist) == 0:
         print('No measurement files specified, quitting.')
         quit()
@@ -121,16 +121,16 @@ def main():
 
     #Obtain line positions
     xpix, Hreal = pixHlist(calAlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
-    
+
     xreal, Nlines = clusterlines(xpix,linespacing)
-    
+
     # Fit the warping function through the data
     pix2realx = pixrealfit(xpix, xreal, warpingorder)
 
     # Now a similar thing for the y-coordinate, across the width of the channel
     imagesize = np.shape(readcropimage(calAlist[0],bounds=bounds))
     pix2realy = pixrealfit([0,imagesize[0]],[0,channelwidth],1)
-    
+
     if plots:
         plt.figure(figsize=(12,8))
         plt.scatter(xpix,xreal,marker='x',color='red',label='Data')
@@ -159,7 +159,7 @@ def main():
     xpix, H = pixHlist(calBlist,Hlist,bounds=bounds,centerpx=centerpx,linespacingpx=linespacingpx)
     xprojected = pix2realx(xpix)
     xreal, NlinesB = clusterlines(xpix,Nlines=Nlines,linespacing=linespacing)
-    
+
     xc, Hc = cameraposition(xprojected,xreal,H,n)
 
     if plots:
@@ -208,8 +208,9 @@ def main():
 
         # Obtain the positions of the particles in pixels
         positionspix = particlepositions(imagecorrected,markerscorrected)
+        positions    = np.asarray([pix2realx(positionspix[:,0]),pix2realy(positionspix[:,1])])
 
-        if verbose: print('Particle positions found [px]')
+        if verbose: print('Particle positions found [px] and projected [m]')
 
         #Convert line positions (px -> m projected)
         xprojected = pix2realx(lines)
@@ -233,10 +234,10 @@ def main():
 
             # Approximate the particle positions by linear interpolation (li) of neighbouring lines
             # The order of the interpolation is given by surfaceshapeorder
-            
+
             # Array to overwrite
             positionsreal = np.asarray([positions[1,:],positions[1,:]])
-            
+
             # Loop over particles (projected) x positions
             for i in range(0,np.size(positions[0,:]),1):
                 x = positions[0,i]
@@ -246,11 +247,11 @@ def main():
                 # x = xprojected[idx] (projected positions lines), y = xreal[idx] (real positions lines)
                 fit = np.polyfit(xprojected[idx],xreal[idx],np.size(xreal[idx])-1)
                 p = np.poly1d(fit)
-                
+
                 # Obtain the real x position
                 positionsreal[0,i] = p(x)
-        
-        
+
+
         savename = file[0:-3]+'dat'
         np.savetxt(savename,positionsreal)
         if verbose: print('Particle positions [m] stored in',savename)
@@ -273,8 +274,8 @@ def main():
             plt.scatter(xreal,0*xreal,color='red',label='real positions')
             x = np.linspace(np.min((np.min(xprojected),np.min(xreal))),np.max((np.max(xprojected),np.max(xreal))),100)
             plt.fill_between(x,0,H(x),color='blue',alpha=0.1)
-        
-            if reconstructed: 
+
+            if reconstruction:
                 data = (xprojected,H,xc[0],Hc[0])
                 xw = optimization.root(intersection,xprojected,args=data)
                 xw = xw.x
