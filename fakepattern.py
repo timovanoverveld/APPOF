@@ -81,17 +81,28 @@ def fakepattern():
         B = args.n
         X = X + A*2*(np.random.rand(np.size(X))-0.5)
         Y = Y + B*2*(np.random.rand(np.size(Y))-0.5)
-    
-    plt.figure(figsize=(12,12))
-    plt.scatter(X,Y)
-    plt.xlim(0,L)
-    plt.ylim(0,L)
-    plt.grid()
-    plt.axes().set_aspect('equal')
-    plt.draw()
-    plt.waitforbuttonpress(0)
-    plt.close()
 
-    print('Done')
+    # Plotting
+    if args.p:
+        plt.figure(figsize=(12,12))
+        plt.scatter(X,Y)
+        plt.xlim(0,L)
+        plt.ylim(0,L)
+        plt.grid()
+        plt.axes().set_aspect('equal')
+        plt.draw()
+        plt.waitforbuttonpress(0)
+        plt.close()
+
+    if args.f:
+        filename = args.f
+    else:
+        filename = 'fakepattern.dat'
+
+    # Save pattern data
+    np.savetxt(filename,np.asarray([X,Y]))
+
+    print('Pattern stored in',filename)
+
 if __name__ == "__main__":  
     fakepattern()
