@@ -21,35 +21,62 @@ def sortfiles():
     args = parser.parse_args()
    
     # Directories
-    basedir = './'
+    basedir = os.getcwd()
     
-    imagedir = basedir + 'images/'
-    positionsdir = basedir + 'positions/' 
-    trajectorydir = basedir + 'trajectories/'
+    imagedir = basedir + '/images/'
+    positionsdir = basedir + '/positions/' 
+    trajectorydir = basedir + '/trajectories/'
 
-    # Allocation
-    flist = np.empty(0,dtype=int)
 
-    # Find all position files (.dat)
-    for (dirpath, dirnames, filenames) in os.walk(positionsdir):
-        f = np.asarray(fnmatch.filter(filenames,'*.dat*'))
-        flist = np.append(flist,f)
+#############################################################################
+    #Check if we are in a measurement directory (should include a .strm file)
+    if any(File.endswith('strm') for File in os.listdir('.')):
 
-    if np.size(flist) == 0:
-        print('Searched through ',positionsdir,'\nNo measurement files specified, quitting.')
+        # Check for directories
+        if not os.path.exists(imagedir):
+            os.makedirs(imagedir)
+        if not os.path.exists(positionsdir):
+            os.makedirs(positionsdir)
+        if not os.path.exists(trajectorydir):
+            os.makedirs(trajectorydir)
+        
+        # Put loose files in correct directories
+
+        # Allocation
+        ilist = np.empty(0,dtype=int)
+        plist = np.empty(0,dtype=int)
+        tlist = np.empty(0,dtype=int)
+
+        # Find all images files (.tif)
+        for (dirpath, dirnames, filenames) in os.walk(basedir):
+            i = np.asarray(fnmatch.filter(filenames,'*.tif*'))
+            ilist = np.append(ilist,i)
+            
+            p = np.asarray(fnmatch.filter(filenames,'*[0-9].dat'))
+            plist = np.append(plist,p)
+            
+            t = np.asarray(fnmatch.filter(filenames,'*[x,y].dat'))
+            tlist = np.append(tlist,t)
+            break
+
+
+        if np.size(ilist) > 0:
+            for i in ilist:
+                os.rename(i,imagedir+i)
+        if np.size(plist) > 0:
+            for i in plist:
+                os.rename(i,positionsdir+i)
+        if np.size(tlist) > 0:
+            for i in tlist:
+                os.rename(i,trajectorydir+i)
+        
+        print('Done')
         quit()
-    if verbose: print('User inputs read')
-
-    #############################################
-    sortedlist = [int(x.replace('.dat','').replace('.','')) for x in flist]
-    sortedlist = np.argsort(sortedlist)
-    flistsorted = list(flist[sortedlist])
     
-    # Create directories
-    if not os.path.exists(measurementdir+'trajectories'):
-        os.makedirs(measurementdir+'trajectories')
-
-    if verbose: print('Particle trajectories stored in folder',trajectorydir)
+    else:
+        print('Not in a measurement directory')
+        quit()
+        
 
 if __name__ == "__main__":  
     sortfiles()
