@@ -75,10 +75,10 @@ def trajectories():
     N_timesteps = np.size(np.asarray(flistsorted))
 
     # Maximum number of particles
-    N_max = int(5e2)
+    N_max = int(5e3)
     
     # Distance threshold in meters
-    distance_thres = 0.01
+    distance_thres = 1e-2
 
     # Create emtpy array to store particle data, 
     # Number of particles X Number of timesteps X coordinates (x,y)
@@ -119,7 +119,18 @@ def trajectories():
                         # Simplest is to store and overwrite where neccessary
                         particlessorted[j,i,0] = x[idx_fw]
                         particlessorted[j,i,1] = y[idx_fw]
-                    
+
+                unused = np.nonzero(np.isin(x,particlessorted[:,i,0],invert=True))[0]
+                
+                #First zero at the end of particlessorted: find last nonzero 
+                nz = np.nonzero(particlessorted[:,i,0])[0][-1]+1
+                
+                particlessorted[N_used:N_used+np.size(unused),i,0] = x[unused]
+                particlessorted[N_used:N_used+np.size(unused),i,1] = y[unused]
+                
+                # Number of used slots
+                N_used += np.size(unused)
+                 
             
             elif method == 'bw':
                 Nonzeroprev = np.nonzero(particlessorted[:,i-1,0])[0]
