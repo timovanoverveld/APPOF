@@ -146,6 +146,17 @@ def trajectories():
                         # Simplest is to store and overwrite where neccessary
                         particlessorted[idx_bw,i,0] = x[j]
                         particlessorted[idx_bw,i,1] = y[j]
+                
+                unused = np.nonzero(np.isin(x,particlessorted[:,i,0],invert=True))[0]
+                
+                #First zero at the end of particlessorted: find last nonzero 
+                nz = np.nonzero(particlessorted[:,i,0])[0][-1]+1
+                
+                particlessorted[N_used:N_used+np.size(unused),i,0] = x[unused]
+                particlessorted[N_used:N_used+np.size(unused),i,1] = y[unused]
+                
+                # Number of used slots
+                N_used += np.size(unused)
 
 
             elif method == 'fwbw':
