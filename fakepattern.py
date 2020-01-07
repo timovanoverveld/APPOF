@@ -11,25 +11,32 @@ import numpy as np
 import os
 import argparse
 import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings("ignore")
+
 
 ############################################################################
-def distributions():
+def fakepattern():
     # Argument parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('-f', action='store_true', help='File name')
-    parser.add_argument('-t', action='store_true', help='Pattern type: 0 random, 1 square, 2 lines, 3 fluidlike')
-    parser.add_argument('-n', action='store_true', help='Number of particles')
-    parser.add_argument('-l', action='store_true', help='Number of lines')
+    parser.add_argument('-t', type=int, help='Pattern type: 0 random, 1 square, 2 lines, 3 fluidlike')
+    parser.add_argument('-N', type=int, help='Number of particles')
+    parser.add_argument('-l', type=int, help='Number of lines')
+    parser.add_argument('-n', type=float, help='Add noise to the pattern by specifying an amplitude')
     parser.add_argument('-p', action='store_true', help='Enable plotting')
+    parser.add_argument('-f', action='store_true', help='File name')
     args = parser.parse_args()
    
     #Fake data
-    N = args.n # Number of particles in domain
+    N = args.N # Number of particles in domain
    
     L = 1   # Size of (square) domain, always 1
     M = L/2 # Value used for Modulo/shortest distance
     
-    noise = True
+    if args.t == None:
+        print('No pattern type given')
+        quit()
+
     if args.t == 0: #'random'
         # Random 2D distribution
         X = L*np.random.rand(N) # Random X coordinates
@@ -37,15 +44,15 @@ def distributions():
     
     elif args.t == 1: #'square'
         # Square ordered 2D distribution
-        X = np.tile(np.linspace(0,L,N/10),11)
+        X = np.tile(np.linspace(L/(2*np.sqrt(N)),L-L/(2*np.sqrt(N)),N/(np.sqrt(N))),int(np.sqrt(N)))
         Y = np.sort(X)
     
     elif args.t == 2: #'lines'
         # Line ordered 2D distribution
-        Nrows = 6 # Number of rows, N should be divisible by this
+        Nrows = args.l # Number of rows, N should be divisible by this
         if N/Nrows%1 != 0:
             print('Error in number of rows')
-            sys.exit()
+            quit()
     
         # Lay down the particles in a grid
         X = np.tile(np.linspace(L*Nrows/(2*N),L*(1-Nrows/(2*N)),N/Nrows),Nrows)
@@ -68,12 +75,10 @@ def distributions():
                 X = np.append(X,x)
                 Y = np.append(Y,y)
     
-        print(np.size(X))
-    
     # Add noise
-    if noise:
-        A = 1e-2
-        B = 1e-2
+    if args.n:
+        A = args.n
+        B = args.n
         X = X + A*2*(np.random.rand(np.size(X))-0.5)
         Y = Y + B*2*(np.random.rand(np.size(Y))-0.5)
     
@@ -83,8 +88,10 @@ def distributions():
     plt.ylim(0,L)
     plt.grid()
     plt.axes().set_aspect('equal')
-    plt.show()
+    plt.draw()
+    plt.waitforbuttonpress(0)
+    plt.close()
 
-
+    print('Done')
 if __name__ == "__main__":  
     fakepattern()
