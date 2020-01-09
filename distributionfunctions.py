@@ -67,15 +67,12 @@ def distributions():
                 Angles[i,j]  = np.arctan2(dy,dx)
     
 
-
-    # Calculate the correlation functions
-
     # Binwidth, determines the smoothness
     dr   = L/2e2
     dth  = 2*np.pi/2e2
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
-    dxr  = 5e-3
+    dxr  = 1e-3
     dxth = 2*np.pi/(5*2**7)
     
     # r-dr/2     r=i*dxr       r+dr/2
@@ -127,14 +124,14 @@ def distributions():
     
     print('Average g = ',np.mean(g))
     glog = np.asarray([[np.log10(y) for y in x] for x in g])
-    glog = np.where(glog<=-100,np.unique(np.sort(glog))[1],glog)
+    glog = np.where(glog<=-100,-1,glog)
     
     print('Calculations are done')
     
     # Plot
     
     if args.p:
-        fig = plt.figure(figsize=(16,16))
+        fig = plt.figure(figsize=(24,16))
         ax1 = fig.add_subplot(231)
         ax2 = fig.add_subplot(232)
         ax3 = fig.add_subplot(234, polar=True)
@@ -150,24 +147,25 @@ def distributions():
         ax1.set_aspect('equal')
         ax1.set_title('Pattern')
         
-        ax2.plot(r,gr)
+        ax2.plot(r,gr,label='dr = '+format(dr,'.1e'))
         ax2.set_xlabel('$r$')
         ax2.set_ylabel('$g(r)$')
         ax2.grid()
         ax2.set_xlim(-0.01,M)
+        ax2.legend()
         ax2.set_title('Radial distribution function')
    
-        ax3.plot(th,gth)
-        ax3.set_xlabel('$\\theta$')
-        ax3.set_ylabel('$g(\\theta)$')
+        ax3.plot(th,gth,label='dth = '+format(dth,'.1e'))
+        #ax3.set_xlabel('$\\theta$')
+        #ax3.set_ylabel('$g(\\theta)$')
+        ax3.legend()
         ax3.set_title('Angular distribution function')
 
-        ax4.contourf(T,R,g,cmap="jet",levels=100)
-        ax4.set_xlabel('$\\theta$')
-        ax4.set_ylabel('$r$')
-        ax4.set_ylim(0)
+        im = ax4.contourf(T,R,g,cmap="jet",levels=100)
+        #ax4.set_xlabel('$\\theta$')
+        #ax4.set_ylabel('$r$')
         ax4.set_title('2D distribution function')
-        #plt.colorbar(ax4)
+        fig.colorbar(im,ax=ax4)
         
         xdir = np.argmin(abs(th))
         ydir = np.argmin(abs(th-np.pi/2))
@@ -177,11 +175,17 @@ def distributions():
         ax5.plot(R[x],g[x],label='y-direction')
         ax5.grid()
         ax5.legend()
+        ax5.set_title('1D line plots of 2D distribution function')
         
-        ax6.contourf(T,R,glog,cmap='bwr',levels=100)#,vmin=-np.max(glog),vmax=np.max(glog))
-        ax6.set_xlabel('$\\theta$')
-        ax6.set_ylabel('$r$')
-        ax6.set_ylim(0)
+        im = ax6.contourf(T,R,glog,cmap='bwr',levels=100)#, vmin=0, vmax=2)
+        #ax6.set_xlabel('$\\theta$')
+        #ax6.set_ylabel('$r$')
+        ax6.set_title('Log10 of 2D distribution function')
+        fig.colorbar(im,ax=ax6)
+       
+        savename = 'DF_'+args.f[:-4]+'.png'
+        print('Plot saved as',savename)
+        plt.savefig(savename)
         
         plt.draw()
         plt.waitforbuttonpress(0)
