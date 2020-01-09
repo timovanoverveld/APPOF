@@ -75,13 +75,13 @@ def distributions():
     dth  = 2*np.pi/2e2
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
-    dxr  = 1e-2
+    dxr  = 5e-3
     dxth = 2*np.pi/(5*2**7)
     
-    # r-dr/2     r       r+dr/2
-    # [------------------]
-    #  [------------------]
-    #   [----------------- ]
+    # r-dr/2     r=i*dxr       r+dr/2
+    # [-------------------------]
+    #  [-------------------------]
+    #   [-------------------------]
     
     print('dr   =',format(dr,'.1e'))
     print('dth  =',format(dth,'.1e'))
@@ -104,7 +104,7 @@ def distributions():
     for i in range(0,np.size(r),1):
         a[:,:,i] = np.logical_and(r[i]-dr/2<Distances,Distances<r[i]+dr/2)
 
-        gr[i] = np.sum(a)*L**2/(N**2*2*np.pi*r[i]*dr)
+        gr[i] = np.sum(a[:,:,i])*L**2/(N**2*2*np.pi*r[i]*dr)
 
     for j in range(0,np.size(th),1):
     
@@ -115,7 +115,7 @@ def distributions():
         if th[j]+dth/2 > np.pi:
             b[:,:,j] += np.logical_and(th[j]-dth/2-2*np.pi<Angles,Angles<th[j]+dth/2-2*np.pi)
     
-        gth[j] = np.sum(b)*L**2*2*np.pi/(N**2*dth)
+        gth[j] = np.sum(b[:,:,j])*L**2*2*np.pi/(N**2*dth)
 
     for i in range(0,np.size(r),1):
         for j in range(0,np.size(th),1):
@@ -123,69 +123,69 @@ def distributions():
     
             g[i,j] = np.sum(c)*L**2/(N**2*r[i]*dr*dth)
     
+    T,R = np.meshgrid(th,r)
+    
+    print('Average g = ',np.mean(g))
+    glog = np.asarray([[np.log10(y) for y in x] for x in g])
+    glog = np.where(glog<=-100,np.unique(np.sort(glog))[1],glog)
     
     print('Calculations are done')
     
     # Plot
-
-    fig = plt.figure(figsize=(12,8))
-    ax1 = fig.add_subplot(121)
-    ax2 = fig.add_subplot(122, polar=True)
     
-    ax1.plot(r,gr)
-    ax1.set_xlabel('$r$')
-    ax1.set_ylabel('$g(r)$')
-    ax1.grid()
-    ax1.set_xlim(-0.01,M)
+    if args.p:
+        fig = plt.figure(figsize=(16,16))
+        ax1 = fig.add_subplot(231)
+        ax2 = fig.add_subplot(232)
+        ax3 = fig.add_subplot(234, polar=True)
+        ax4 = fig.add_subplot(235, polar=True)
+        ax5 = fig.add_subplot(233)
+        ax6 = fig.add_subplot(236, polar=True)
+
+        ax1.plot(X,Y,'.')
+        ax1.set_xlabel('$x$')
+        ax1.set_ylabel('$y$')
+        ax1.set_xlim(0, L)
+        ax1.set_ylim(0, L)
+        ax1.set_aspect('equal')
+        ax1.set_title('Pattern')
+        
+        ax2.plot(r,gr)
+        ax2.set_xlabel('$r$')
+        ax2.set_ylabel('$g(r)$')
+        ax2.grid()
+        ax2.set_xlim(-0.01,M)
+        ax2.set_title('Radial distribution function')
    
-    ax2.plot(th,gth)
-    ax2.set_xlabel('$\\theta$')
-    ax2.set_ylabel('$g(\\theta)$')
+        ax3.plot(th,gth)
+        ax3.set_xlabel('$\\theta$')
+        ax3.set_ylabel('$g(\\theta)$')
+        ax3.set_title('Angular distribution function')
 
-    plt.draw()
-    plt.waitforbuttonpress(0)
-    plt.close()
-
-    quit()
-    T,R = np.meshgrid(th,r)
-    
-    print(np.mean(g))
-    glog = np.asarray([[np.log10(y) for y in x] for x in g])
-    
-    glog = np.where(glog<=-100,np.unique(np.sort(glog))[1],glog)
-    
-    fig, ax = plt.subplots(subplot_kw=dict(projection='polar'),figsize=(12,12))
-    plt.contourf(T,R,g,cmap="jet",levels=100)
-    plt.xlabel('$\\theta$')
-    plt.ylabel('$r$')
-    plt.ylim(0)
-    plt.colorbar()
-    plt.draw()
-    plt.waitforbuttonpress(0)
-    plt.close()
-    
-    #fig, ax = plt.subplots(subplot_kw=dict(projection='polar'),figsize=(12,12))
-    #plt.contourf(T,R,glog,cmap='bwr',levels=100,vmin=-np.max(glog),vmax=np.max(glog))
-    #plt.xlabel('$\\theta$')
-    #plt.ylabel('$r$')
-    #plt.ylim(0)
-    #plt.colorbar()
-    #plt.draw()
-    #plt.waitforbuttonpress(0)
-    #plt.close()
-    
-    plt.figure(figsize=(12,8))
-    xdir = np.argmin(abs(th))
-    ydir = np.argmin(abs(th-np.pi/2))
-    x = np.where(T==th[xdir])
-    plt.plot(R[x],g[x],label='x-direction')
-    x = np.where(T==th[ydir])
-    plt.plot(R[x],g[x],label='y-direction')
-    plt.grid()
-    plt.legend()
-    plt.draw()
-    plt.waitforbuttonpress(0)
-    plt.close()
+        ax4.contourf(T,R,g,cmap="jet",levels=100)
+        ax4.set_xlabel('$\\theta$')
+        ax4.set_ylabel('$r$')
+        ax4.set_ylim(0)
+        ax4.set_title('2D distribution function')
+        #plt.colorbar(ax4)
+        
+        xdir = np.argmin(abs(th))
+        ydir = np.argmin(abs(th-np.pi/2))
+        x = np.where(T==th[xdir])
+        ax5.plot(R[x],g[x],label='x-direction')
+        x = np.where(T==th[ydir])
+        ax5.plot(R[x],g[x],label='y-direction')
+        ax5.grid()
+        ax5.legend()
+        
+        ax6.contourf(T,R,glog,cmap='bwr',levels=100)#,vmin=-np.max(glog),vmax=np.max(glog))
+        ax6.set_xlabel('$\\theta$')
+        ax6.set_ylabel('$r$')
+        ax6.set_ylim(0)
+        
+        plt.draw()
+        plt.waitforbuttonpress(0)
+        plt.close()
 
     
     print('Done')
