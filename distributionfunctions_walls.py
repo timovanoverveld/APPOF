@@ -16,6 +16,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 ############################################################################
+def intersectwall(wx, wy, X, Y, th):
+    labda = ((X-wx[0])/(wx[1]-wx[0])*(wy[1]-wy[0])+wy[0]-Y)/(np.tan(th)-(wy[1]-wy[0])/(wx[1]-wx[0]))
+    xinter = labda+X
+    yinter = labda*np.tan(th)+Y
+    return labda, xinter, yinter
+
+
 def distributions():
     # Argument parser
     parser = argparse.ArgumentParser()
@@ -95,7 +102,7 @@ def distributions():
     dth  = 2*np.pi/1e3
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
-    dxr  = 5e-2#1e-4
+    dxr  = 1e-2#1e-4
     dxth = 2*np.pi/(5*2**7)
     
     # r-dr/2     r=i*dxr       r+dr/2
@@ -128,9 +135,11 @@ def distributions():
         a[:,:,i] = np.logical_and(r[i]-dr/2<Distances,Distances<r[i]+dr/2)
 
         gr[i] = np.sum(a[:,:,i])*L**2/(N**2*2*np.pi*r[i]*dr)
-
+    
     for j in range(0,np.size(th),1):
     
+        area = np.zeros(N,dtype=float)
+        
         b[:,:,j] = np.logical_and(th[j]-dth/2<Angles,Angles<th[j]+dth/2)
     
         if th[j]-dth/2 < -np.pi:
@@ -138,7 +147,27 @@ def distributions():
         if th[j]+dth/2 > np.pi:
             b[:,:,j] += np.logical_and(th[j]-dth/2-2*np.pi<Angles,Angles<th[j]+dth/2-2*np.pi)
     
-        gth[j] = np.sum(b[:,:,j])*L**2*2*np.pi/(N**2*dth)
+        # For all walls
+        for i in range(0,np.size(wx),2):
+            wallx = wx[i:i+2]
+            wally = wy[i:i+2]
+            
+            # Wall intersections
+            labda, xinter, yinter = intersectwall(wallx,wally,X,Y,th[j])
+            
+            # Angle above and below
+            labda_a, x_a, y_a = intersectwall(wallx,wally,X,Y,th[j]+dth/2)
+            labda_b, x_b, y_b = intersectwall(wallx,wally,X,Y,th[j]-dth/2)
+            
+            for i in range(0,N,1):
+               # if labda[i]>0 and labda_a[i]>0 and labda_b[i]>0: #Intersections with wall
+                if np.min([x_a[i],x_b[i]]) <= xinter[i] <= np.max([x_a[i],x_b[i]]):
+                    area[i] = abs((X[i]*(y_a[i]-y_b[i])+x_a[i]*(y_b[i]-Y[i])+x_b[i]*(Y[i]-y_a[i]))/2)
+
+        area = np.where(area==0,dth/(2*np.pi),area)
+
+        #gth[j] = np.sum(b[:,:,j])*L**2*2*np.pi/(N**2*dth)
+        gth[j] = np.sum(b[:,:,j])*L**2/(N**2*np.mean(area))
 
     for i in range(0,np.size(r),1):
         for j in range(0,np.size(th),1):
