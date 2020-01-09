@@ -22,6 +22,7 @@ def distributions():
     parser.add_argument('-f', type=str, help='File')
     parser.add_argument('-r', action='store_true', help='Radial distribution function values')
     parser.add_argument('-p', action='store_true', help='Enable plotting')
+    parser.add_argument('-P', action='store_true', help='Domain is periodic')
     args = parser.parse_args()
    
     #Read data
@@ -37,7 +38,11 @@ def distributions():
 
     N = np.size(X) # Number of particles in domain
     L = 1   # Size of (square) domain
-    M = L/2 # Value used for Modulo/shortest distance
+    
+    if args.P:
+        M = L/2 # Value used for Modulo/shortest distance
+    else:
+        M = L
     
 
     # Fill arrays with all distances and angles between particles
@@ -45,14 +50,17 @@ def distributions():
     Distances = np.empty((N,N),dtype=float)
     for i in range(0,N,1):
         for j in range(0,N,1):
-            # Correct distances for a periodic domain
+            # Calculate absolute distances in x and y directions
             dx = abs(X[i]-X[j])
-            if dx > L/2:
-                dx = L-dx        
             dy = abs(Y[i]-Y[j])
-            if dy > L/2:
-                dy = L-dy
-            
+
+            # Correct distances for a periodic domain
+            if args.P:
+                if dx > L/2:
+                    dx = L-dx        
+                if dy > L/2:
+                    dy = L-dy
+                
             Distances[i,j] = np.sqrt(dx**2+dy**2)
             
     Angles  = np.empty((N,N),dtype=float)
@@ -124,7 +132,7 @@ def distributions():
     
     print('Average g = ',np.mean(g))
     glog = np.asarray([[np.log10(y) for y in x] for x in g])
-    glog = np.where(glog<=-100,-1,glog)
+    glog = np.where(glog<=-100,-np.max(glog),glog)
     
     print('Calculations are done')
     
@@ -177,7 +185,7 @@ def distributions():
         ax5.legend()
         ax5.set_title('1D line plots of 2D distribution function')
         
-        im = ax6.contourf(T,R,glog,cmap='bwr',levels=100)#, vmin=0, vmax=2)
+        im = ax6.contourf(T,R,glog,cmap='bwr',levels=100, vmin=np.min(glog), vmax=np.max(glog))
         #ax6.set_xlabel('$\\theta$')
         #ax6.set_ylabel('$r$')
         ax6.set_title('Log10 of 2D distribution function')
