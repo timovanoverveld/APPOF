@@ -23,6 +23,7 @@ def distributions():
     parser.add_argument('-r', action='store_true', help='Radial distribution function values')
     parser.add_argument('-p', action='store_true', help='Enable plotting')
     parser.add_argument('-P', action='store_true', help='Domain is periodic')
+    parser.add_argument('-l', action='store_true', help='Log10 colormap')
     args = parser.parse_args()
    
     #Read data
@@ -80,7 +81,7 @@ def distributions():
     dth  = 2*np.pi/2e2
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
-    dxr  = 1e-3
+    dxr  = 5e-3
     dxth = 2*np.pi/(5*2**7)
     
     # r-dr/2     r=i*dxr       r+dr/2
@@ -97,6 +98,8 @@ def distributions():
     r = np.linspace(rmin,M,(M-rmin)/dxr+1) # Radii to calculate g
     
     th  = np.linspace(-np.pi,np.pi,(2*np.pi)/dxth+1) # Radii to calculate g
+    thsym  = np.linspace(0,np.pi/2,(np.pi/2)/dxth) # Radii to calculate g
+    halfsize = int(np.size(th)/2)
     
     a = np.empty((N,N,np.size(r)), dtype=float)
     b = np.empty((N,N,np.size(th)),dtype=float)
@@ -104,6 +107,7 @@ def distributions():
     gr  = np.empty(np.size(r),              dtype=float)
     gth = np.empty(np.size(th),             dtype=float)
     g   = np.empty((np.size(r),np.size(th)),dtype=float)
+    gsym = np.empty((np.size(r),int(np.size(th)/4)),dtype=float)
     
 
     for i in range(0,np.size(r),1):
@@ -128,11 +132,23 @@ def distributions():
     
             g[i,j] = np.sum(c)*L**2/(N**2*r[i]*dr*dth)
     
-    T,R = np.meshgrid(th,r)
     
     print('Average g = ',np.mean(g))
-    glog = np.asarray([[np.log10(y) for y in x] for x in g])
-    glog = np.where(glog<=-100,-np.max(glog),glog)
+
+    # Calculate the (assumed) symmetric quadrant of g2D
+    for i in range(0,int(np.size(th)/4),1):
+        gsym[:,i] = (g[:,i]+g[:,-i]+g[:,halfsize+i]+g[:,halfsize-i])/4
+
+    # If logarithmic colormap, calculate the log10()
+    if args.l:
+        glog = np.asarray([[np.log10(y) for y in x] for x in g])
+        glog = np.where(glog<=-100,-np.max(glog),glog)
+        
+        gsymlog = np.asarray([[np.log10(y) for y in x] for x in gsym])
+        gsymlog = np.where(gsymlog<=-100,np.unique(np.sort(gsymlog))[1],gsymlog)
+    
+    T,R = np.meshgrid(th,r)
+    Tsym,Rsym = np.meshgrid(thsym,r)
     
     print('Calculations are done')
     
@@ -164,15 +180,15 @@ def distributions():
         ax2.set_title('Radial distribution function')
    
         ax3.plot(th,gth,label='dth = '+format(dth,'.1e'))
-        #ax3.set_xlabel('$\\theta$')
-        #ax3.set_ylabel('$g(\\theta)$')
         ax3.legend()
         ax3.set_title('Angular distribution function')
 
-        im = ax4.contourf(T,R,g,cmap="jet",levels=100)
-        #ax4.set_xlabel('$\\theta$')
-        #ax4.set_ylabel('$r$')
-        ax4.set_title('2D distribution function')
+        if args.l:
+            im = ax4.contourf(T,R,glog,cmap='bwr',levels=100, vmin=np.min(glog), vmax=np.max(glog))
+            ax4.set_title('Log10 of 2D distribution function')
+        else: 
+            im = ax4.contourf(T,R,g,cmap="jet",levels=100)
+            ax4.set_title('2D distribution function')
         fig.colorbar(im,ax=ax4)
         
         xdir = np.argmin(abs(th))
@@ -185,15 +201,20 @@ def distributions():
         ax5.legend()
         ax5.set_title('1D line plots of 2D distribution function')
         
-        im = ax6.contourf(T,R,glog,cmap='bwr',levels=100, vmin=np.min(glog), vmax=np.max(glog))
-        #ax6.set_xlabel('$\\theta$')
-        #ax6.set_ylabel('$r$')
-        ax6.set_title('Log10 of 2D distribution function')
+        if args.l:
+            im = ax6.contourf(Tsym,Rsym,gsymlog,cmap='bwr',levels=100, vmin=np.min(gsymlog), vmax=np.max(gsymlog))
+            ax6.set_title('Log10 of 2D distribution function')
+        else: 
+            im = ax6.contourf(Tsym,Rsym,gsym,cmap="jet",levels=100)
+            ax6.set_title('2D distribution function')
+        ax6.set_thetamin(0)
+        ax6.set_thetamax(90)
         fig.colorbar(im,ax=ax6)
+        
        
         savename = 'DF_'+args.f[:-4]+'.png'
-        print('Plot saved as',savename)
         plt.savefig(savename)
+        print('Plot saved as',savename)
         
         plt.draw()
         plt.waitforbuttonpress(0)
