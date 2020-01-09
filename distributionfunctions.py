@@ -20,10 +20,13 @@ def distributions():
     # Argument parser
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', type=str, help='File')
-    parser.add_argument('-r', action='store_true', help='Radial distribution function values')
+    parser.add_argument('-r', type=float, help='Radial distribution function values')
     parser.add_argument('-p', action='store_true', help='Enable plotting')
     parser.add_argument('-P', action='store_true', help='Domain is periodic')
     parser.add_argument('-l', action='store_true', help='Log10 colormap')
+    parser.add_argument('-L', type=float, help='Maximum correlation/domain size')
+    parser.add_argument('-wx', type=float, nargs='+', help='Wall endpoints x-coordinates')
+    parser.add_argument('-wy', type=float, nargs='+', help='Wall endpoints y-coordinates')
     args = parser.parse_args()
    
     #Read data
@@ -42,13 +45,20 @@ def distributions():
         quit()
 
     N = np.size(X) # Number of particles in domain
-    L = 1   # Size of (square) domain
+    
+    if args.L:
+        L = args.L
+    else:
+        L = 1 #np.max([np.max(X)-np.min(X),np.max(Y)-np.min(Y)])   # Size of (square) domain
     
     if args.P:
         M = L/2 # Value used for Modulo/shortest distance
     else:
         M = L
-    
+   
+    if args.wx and args.wy:
+        wx = args.wx
+        wy = args.wy
 
     # Fill arrays with all distances and angles between particles
 
@@ -82,10 +92,10 @@ def distributions():
 
     # Binwidth, determines the smoothness
     dr   = L/2e2
-    dth  = 2*np.pi/2e2
+    dth  = 2*np.pi/1e3
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
-    dxr  = 5e-2
+    dxr  = 5e-2#1e-4
     dxth = 2*np.pi/(5*2**7)
     
     # r-dr/2     r=i*dxr       r+dr/2
@@ -170,10 +180,14 @@ def distributions():
         ax1.plot(X,Y,'.')
         ax1.set_xlabel('$x$')
         ax1.set_ylabel('$y$')
-        ax1.set_xlim(0, L)
-        ax1.set_ylim(0, L)
+        #ax1.set_xlim(0, L)
+        #ax1.set_ylim(0, L)
         ax1.set_aspect('equal')
         ax1.set_title('Pattern')
+
+        if args.wx and args.wy:
+            for i in range(0,np.size(wx),2):
+                ax1.plot(wx[i:i+2],wy[i:i+2],'k')
         
         ax2.plot(r,gr,label='dr = '+format(dr,'.1e'))
         ax2.set_xlabel('$r$')
