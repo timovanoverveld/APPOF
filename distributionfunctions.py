@@ -37,6 +37,10 @@ def distributions():
             print('No input file found')
             quit()
 
+    if np.size(X) == 0:
+        print('No input data found in ',args.f)
+        quit()
+
     N = np.size(X) # Number of particles in domain
     L = 1   # Size of (square) domain
     
@@ -81,7 +85,7 @@ def distributions():
     dth  = 2*np.pi/2e2
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
-    dxr  = 5e-3
+    dxr  = 5e-2
     dxth = 2*np.pi/(5*2**7)
     
     # r-dr/2     r=i*dxr       r+dr/2
@@ -191,12 +195,12 @@ def distributions():
             ax4.set_title('2D distribution function')
         fig.colorbar(im,ax=ax4)
         
-        xdir = np.argmin(abs(th))
-        ydir = np.argmin(abs(th-np.pi/2))
-        x = np.where(T==th[xdir])
-        ax5.plot(R[x],g[x],label='x-direction')
-        x = np.where(T==th[ydir])
-        ax5.plot(R[x],g[x],label='y-direction')
+        xdir = np.argmin(abs(thsym))
+        ydir = np.argmin(abs(thsym-np.pi/2))
+        x = np.where(Tsym==thsym[xdir])
+        ax5.plot(Rsym[x],gsym[x],label='x-direction')
+        x = np.where(Tsym==thsym[ydir])
+        ax5.plot(Rsym[x],gsym[x],label='y-direction')
         ax5.grid()
         ax5.legend()
         ax5.set_title('1D line plots of 2D distribution function')
@@ -211,8 +215,8 @@ def distributions():
         ax6.set_thetamax(90)
         fig.colorbar(im,ax=ax6)
         
-       
-        savename = 'DF_'+args.f[:-4]+'.png'
+        lastslash = args.f.rfind('/')  
+        savename = args.f[0:lastslash+1]+'DF_'+args.f[lastslash+1:-4]+'.png'
         plt.savefig(savename)
         print('Plot saved as',savename)
         
