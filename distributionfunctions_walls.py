@@ -99,7 +99,7 @@ def distributions():
 
     # Binwidth, determines the smoothness
     dr   = L/2e2
-    dth  = 2*np.pi/1e3
+    dth  = 2*np.pi/2e2
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
     dxr  = 1e-2#1e-4
@@ -146,7 +146,7 @@ def distributions():
             b[:,:,j] += np.logical_and(th[j]-dth/2+2*np.pi<Angles,Angles<th[j]+dth/2+2*np.pi)
         if th[j]+dth/2 > np.pi:
             b[:,:,j] += np.logical_and(th[j]-dth/2-2*np.pi<Angles,Angles<th[j]+dth/2-2*np.pi)
-    
+   
         # For all walls
         for i in range(0,np.size(wx),2):
             wallx = wx[i:i+2]
@@ -162,7 +162,8 @@ def distributions():
             for i in range(0,N,1):
                # if labda[i]>0 and labda_a[i]>0 and labda_b[i]>0: #Intersections with wall
                 if np.min([x_a[i],x_b[i]]) <= xinter[i] <= np.max([x_a[i],x_b[i]]):
-                    area[i] = abs((X[i]*(y_a[i]-y_b[i])+x_a[i]*(y_b[i]-Y[i])+x_b[i]*(Y[i]-y_a[i]))/2)
+                    if np.min([y_a[i],y_b[i]]) <= yinter[i] <= np.max([y_a[i],y_b[i]]):
+                        area[i] = abs((X[i]*(y_a[i]-y_b[i])+x_a[i]*(y_b[i]-Y[i])+x_b[i]*(Y[i]-y_a[i]))/2)
 
         area = np.where(area==0,dth/(2*np.pi),area)
 
