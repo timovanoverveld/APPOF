@@ -125,7 +125,7 @@ def distributions():
     dth  = 2*np.pi/5e3
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
-    dxr  = 1e-3#1e-4
+    dxr  = 5e-3#1e-4
     dxth = 2*np.pi/(5*2**7)
     
     # r-dr/2     r=i*dxr       r+dr/2
@@ -278,8 +278,15 @@ def distributions():
     for i in range(0,np.size(r),1):
         for j in range(0,np.size(th),1):
             c = np.multiply(a[:,:,i],b[:,:,j])
-    
+   
+            #TODO check if the segment is inside or outside the domain
+
+            # If inside, then include in the calculation 
+            
+            # If outside, then don't include
+
             g[i,j] = np.sum(c)*L**2/(N**2*r[i]*dr*dth)
+            #print(r[i]*dr*dth)
     
     
     print('Average g = ',np.mean(g))
