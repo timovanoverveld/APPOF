@@ -17,7 +17,8 @@ warnings.filterwarnings("ignore")
 
 ############################################################################
 def intersectwall(wx, wy, X, Y, th):
-    labda = ((X-wx[0])/(wx[1]-wx[0])*(wy[1]-wy[0])+wy[0]-Y)/(np.tan(th)-(wy[1]-wy[0])/(wx[1]-wx[0]))
+    #labda = ((X-wx[0])/(wx[1]-wx[0])*(wy[1]-wy[0])+wy[0]-Y)/(np.tan(th)-(wy[1]-wy[0])/(wx[1]-wx[0]))
+    labda = ((X-wx[0])*(wy[1]-wy[0])+(wy[0]-Y)*(wx[1]-wx[0]))/((wx[1]-wx[0])*np.tan(th)-(wy[1]-wy[0]))
     xinter = labda+X
     yinter = labda*np.tan(th)+Y
     return labda, xinter, yinter
@@ -60,6 +61,9 @@ def distributions():
     if args.wx and args.wy:
         wx = args.wx
         wy = args.wy
+        if wx[0] != wx[-1] or wy[0] != wy[-1]:
+            print('Walls do not form a closed loop')
+            quit()
 
     # Fill arrays with all distances and angles between particles
 
@@ -70,13 +74,6 @@ def distributions():
             dx = abs(X[i]-X[j])
             dy = abs(Y[i]-Y[j])
 
-            # Correct distances for a periodic domain
-            if args.P:
-                if dx > L/2:
-                    dx = L-dx        
-                if dy > L/2:
-                    dy = L-dy
-                
             Distances[i,j] = np.sqrt(dx**2+dy**2)
             
     Angles  = np.empty((N,N),dtype=float)
@@ -142,7 +139,7 @@ def distributions():
             b[:,:,j] += np.logical_and(th[j]-dth/2-2*np.pi<Angles,Angles<th[j]+dth/2-2*np.pi)
    
         # For all walls
-        for i in range(0,np.size(wx),2):
+        for i in range(0,np.size(wx)-1,1):
             wallx = wx[i:i+2]
             wally = wy[i:i+2]
             
@@ -210,7 +207,7 @@ def distributions():
         ax1.set_title('Pattern')
 
         if args.wx and args.wy:
-            for i in range(0,np.size(wx),2):
+            for i in range(0,np.size(wx),1):
                 ax1.plot(wx[i:i+2],wy[i:i+2],'k')
         
         ax2.plot(r,gr,label='dr = '+format(dr,'.1e'))
