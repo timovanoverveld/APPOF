@@ -16,12 +16,16 @@ import warnings
 warnings.filterwarnings("ignore")
 
 ############################################################################
-def intersectwall(wx, wy, X, Y, th):
-    #labda = ((X-wx[0])/(wx[1]-wx[0])*(wy[1]-wy[0])+wy[0]-Y)/(np.tan(th)-(wy[1]-wy[0])/(wx[1]-wx[0]))
-    labda = ((X-wx[0])*(wy[1]-wy[0])+(wy[0]-Y)*(wx[1]-wx[0]))/((wx[1]-wx[0])*np.tan(th)-(wy[1]-wy[0]))
-    xinter = labda+X
-    yinter = labda*np.tan(th)+Y
-    return labda, xinter, yinter
+# This function calculates the intersection of two lines. We have a line l=(x0,y0)+labda*(cos(th),sin(th)) and a wall with m=(x1,y1)+mu*(x2-x1,y2-y1). The intersection is considered valid when labda>=0 and 0<=mu<=1
+def intersectwall(x0, y0, x1, y1, x2, y2, th):
+    #labda = ((X-wx[0])*(wy[1]-wy[0])+(wy[0]-Y)*(wx[1]-wx[0]))/((wx[1]-wx[0])*np.tan(th)-(wy[1]-wy[0]))
+    labda = ((x0-x1)*(y2-y1)-(y0-y1)*(x2-x1)) / ((x2-x1)*np.sin(th)-(y2-y1)*np.cos(th))
+    mu = (labda*np.cos(th)+(x0-x1)) / (x2-x1)
+
+    xinter = x0 + labda*np.cos(th)
+    yinter = y0 + labda*np.sin(th)
+
+    return labda, mu, xinter, yinter
 
 
 def distributions():
@@ -160,6 +164,8 @@ def distributions():
 
         #gth[j] = np.sum(b[:,:,j])*L**2*2*np.pi/(N**2*dth)
         gth[j] = np.sum(b[:,:,j])*L**2/(N**2*np.mean(area))
+
+        print(th[j],np.mean(area))
 
     for i in range(0,np.size(r),1):
         for j in range(0,np.size(th),1):
