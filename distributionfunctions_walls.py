@@ -29,7 +29,6 @@ def distributions():
     parser.add_argument('-f', type=str, help='File')
     parser.add_argument('-r', type=float, help='Radial distribution function values')
     parser.add_argument('-p', action='store_true', help='Enable plotting')
-    parser.add_argument('-P', action='store_true', help='Domain is periodic')
     parser.add_argument('-l', action='store_true', help='Log10 colormap')
     parser.add_argument('-L', type=float, help='Maximum correlation/domain size')
     parser.add_argument('-wx', type=float, nargs='+', help='Wall endpoints x-coordinates')
@@ -57,11 +56,6 @@ def distributions():
         L = args.L
     else:
         L = 1 #np.max([np.max(X)-np.min(X),np.max(Y)-np.min(Y)])   # Size of (square) domain
-    
-    if args.P:
-        M = L/2 # Value used for Modulo/shortest distance
-    else:
-        M = L
    
     if args.wx and args.wy:
         wx = args.wx
@@ -99,7 +93,7 @@ def distributions():
 
     # Binwidth, determines the smoothness
     dr   = L/2e2
-    dth  = 2*np.pi/2e2
+    dth  = 2*np.pi/5e3
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
     dxr  = 1e-2#1e-4
@@ -116,7 +110,7 @@ def distributions():
     print('dxth =',format(dxth,'.1e'))
     
     rmin = dr/2 # Smallest radius to check (Typically particle radius, dr/2 or just 0)
-    r = np.linspace(rmin,M,(M-rmin)/dxr+1) # Radii to calculate g
+    r = np.linspace(rmin,L,(L-rmin)/dxr+1) # Radii to calculate g
     
     th  = np.linspace(-np.pi,np.pi,(2*np.pi)/dxth+1) # Radii to calculate g
     thsym  = np.linspace(0,np.pi/2,(np.pi/2)/dxth) # Radii to calculate g
@@ -223,7 +217,7 @@ def distributions():
         ax2.set_xlabel('$r$')
         ax2.set_ylabel('$g(r)$')
         ax2.grid()
-        ax2.set_xlim(-0.01,M)
+        ax2.set_xlim(-0.01,L)
         ax2.legend()
         ax2.set_title('Radial distribution function')
    
@@ -251,10 +245,10 @@ def distributions():
         
         if args.l:
             im = ax6.contourf(Tsym,Rsym,gsymlog,cmap='bwr',levels=100, vmin=np.min(gsymlog), vmax=np.max(gsymlog))
-            ax6.set_title('Log10 of 2D distribution function')
+            ax6.set_title('Log10 of 4-Quadrant averaged 2D distribution function')
         else: 
             im = ax6.contourf(Tsym,Rsym,gsym,cmap="jet",levels=100)
-            ax6.set_title('2D distribution function')
+            ax6.set_title('4-Quadrant averaged 2D distribution function')
         ax6.set_thetamin(0)
         ax6.set_thetamax(90)
         fig.colorbar(im,ax=ax6)
