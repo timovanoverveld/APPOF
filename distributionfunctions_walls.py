@@ -18,10 +18,17 @@ warnings.filterwarnings("ignore")
 ############################################################################
 # This function calculates the intersection of two lines. We have a line l=(x0,y0)+labda*(cos(th),sin(th)) and a wall with m=(x1,y1)+mu*(x2-x1,y2-y1). The intersection is considered valid when labda>=0 and 0<=mu<=1
 def intersectwall(x0, y0, x1, y1, x2, y2, th):
-    #labda = ((X-wx[0])*(wy[1]-wy[0])+(wy[0]-Y)*(wx[1]-wx[0]))/((wx[1]-wx[0])*np.tan(th)-(wy[1]-wy[0]))
     labda = ((x0-x1)*(y2-y1)-(y0-y1)*(x2-x1)) / ((x2-x1)*np.sin(th)-(y2-y1)*np.cos(th))
-    mu = (labda*np.cos(th)+(x0-x1)) / (x2-x1)
 
+    #Calculate 2 representations of mu, based on x and y component of line m
+    mu_x = (labda*np.cos(th)+(x0-x1)) / (x2-x1)
+    mu_y = (labda*np.sin(th)+(y0-y1)) / (y2-y1)
+
+    # Replace mu_x if nan of +/- inf (happens when wall is horizontal or vertical)
+    mu_x_false = np.logical_or(np.isnan(mu_x),np.isinf(mu_x))
+    
+    mu = np.where(mu_x_false,mu_y,mu_x)
+    
     xinter = x0 + labda*np.cos(th)
     yinter = y0 + labda*np.sin(th)
 
@@ -153,17 +160,16 @@ def distributions():
             # Angle above and below
             labda_a, mu_a, x_a, y_a = intersectwall(X,Y,wallx[0],wally[0],wallx[1],wally[1],th[j]+dth/2)
             labda_b, mu_b, x_b, y_b = intersectwall(X,Y,wallx[0],wally[0],wallx[1],wally[1],th[j]-dth/2)
-            
+             
             for i in range(0,N,1):
-                if labda[i] > 0 and 0 <= mu[i] <= 1:
+                if labda[i] > 0 and 0 <= mu[i] <= 1:    #Check for intersection
                     area[i] = abs((X[i]*(y_a[i]-y_b[i])+x_a[i]*(y_b[i]-Y[i])+x_b[i]*(Y[i]-y_a[i]))/2)
-
+            
         area = np.where(area==0,dth/(2*np.pi),area)
 
         #gth[j] = np.sum(b[:,:,j])*L**2*2*np.pi/(N**2*dth)
         gth[j] = np.sum(b[:,:,j])*L**2/(N**2*np.mean(area))
 
-        print(th[j],np.mean(area))
 
     for i in range(0,np.size(r),1):
         for j in range(0,np.size(th),1):
