@@ -161,6 +161,9 @@ def distributions():
         # Give starting values of areas
         area = 2*np.pi*r[i]*dr*np.ones(N,dtype=float)
 
+        # Store single intersections
+        intersect = np.zeros((N,np.size(wx)-1),dtype=float)
+        
         # Calculate intersections for all walls
         for k in range(0,np.size(wx)-1,1):
             wallx = wx[k:k+2]
@@ -181,13 +184,60 @@ def distributions():
                     # Remove corresponding fraction from area
                     area[j] -= r[i]*dr*angularsegment
 
-            #TODO intersections with different walls
-        
-        #area = np.where(area==0,dth/(2*np.pi),area)
+                # 1 Intersection with 1 wall: store for later
+                if np.logical_xor(0 <= mu1[j] <= 1, 0 <= mu2[j] <= 1):
+                    if 0 <= mu1[j] <= 1:
+                        intersect[j,k] = theta1[j]
+                    elif 0 <= mu2[j] <= 1:
+                        intersect[j,k] = theta2[j]
+       
+        # Choose pseudo-angle:
+        thps = 0
 
-        # Exclude intersected parts from area
+        # Do the intersections:
+        for j in range(0,N,1):
+            if np.count_nonzero(intersect[j,:])>0:
+                # Intersection with circle always at radius r[i]
+                
+                # Find intersection with wall
+                for k in range(0,np.size(wx)-1,1):
+                    wallx = wx[k:k+2]
+                    wally = wy[k:k+2]
+                    
+                    labda, mu, xinter, yinter = intersectwall(X[j],Y[j],wallx[0],wally[0],wallx[1],wally[1],thps)
+                    if labda >= 0 and 0 <= mu <= 1:
+                        #print(j,labda,mu)
+                        break
 
-        gr[i] = np.sum(a[:,:,i])*L**2/(N**2*2*np.pi*r[i]*dr)
+                # Distance to wall
+                D = np.sqrt((X[j]-xinter)**2 + (Y[j]-yinter)**2)
+
+                theta1, theta2 = intersect[j,np.nonzero(intersect[j,:])[0]]
+                
+                if D > r[i]:
+                    # thps in part that should be kept
+                    if np.logical_and(theta1 >= thps, theta2 >= thps):
+                        angularsegment = np.max([theta1,theta2])-np.min([theta1,theta2])
+                    elif np.logical_xor(theta1 >= thps, theta2 >= thps):
+                        angularsegment = 2*np.pi - (np.max([theta1,theta2])-np.min([theta1,theta2]))
+                    elif np.logical_and(theta1 <= thps, theta2 <= thps):
+                        angularsegment = np.max([theta1,theta2])-np.min([theta1,theta2])
+                
+                elif D <= r[i]:
+                    # thps in part that should be discarded
+                    if np.logical_and(theta1 >= thps, theta2 >= thps):
+                        angularsegment = 2*np.pi - (np.max([theta1,theta2])-np.min([theta1,theta2]))
+                    elif np.logical_xor(theta1 >= thps, theta2 >= thps):
+                        angularsegment = np.max([theta1,theta2])-np.min([theta1,theta2])
+                    elif np.logical_and(theta1 <= thps, theta2 <= thps):
+                        angularsegment = 2*np.pi - (np.max([theta1,theta2])-np.min([theta1,theta2]))
+
+                # Exclude intersected parts from area
+                area[j] -= r[i]*dr*angularsegment
+
+
+        #gr[i] = np.sum(a[:,:,i])*L**2/(N**2*2*np.pi*r[i]*dr)
+        gr[i] = np.sum(a[:,:,i])*L**2/(N**2*np.mean(area))
     
     ######################################################################
     # Angular
