@@ -34,6 +34,27 @@ def intersectwall(x0, y0, x1, y1, x2, y2, th):
 
     return labda, mu, xinter, yinter
 
+# This function calculates the intersection of a circle and a line. We have a line m=(x1,y1)+mu*(x2-x1,y2-y1) and a circle c:(x-x0)^2+(y-y0)^2=r^2. 
+def intersectcirclewall(x0, y0, x1, y1, x2, y2, r):
+
+    #Intersection gives A*mu^2+B*mu+C=0
+    A = (x2-x1)**2 + (y2-y1)**2
+    B = 2*(x1-x0)*(x2-x1) + 2*(y1-y0)*(y2-y1)
+    C = (x1-x0)**2 + (y1-y0)**2 - r**2
+    
+    #Discriminant
+    D = B**2-4*A*C
+    
+    mu1 = (-B-np.sqrt(D)) / (2*A)
+    mu2 = (-B+np.sqrt(D)) / (2*A)
+   
+    xinter1 = x1 + mu1*(x2-x1)
+    yinter1 = y1 + mu1*(y2-y1)
+    
+    xinter2 = x1 + mu2*(x2-x1)
+    yinter2 = y1 + mu2*(y2-y1)
+
+    return mu1, xinter1, yinter1, mu2, xinter2, yinter2
 
 def distributions():
     # Argument parser
@@ -132,12 +153,44 @@ def distributions():
     g   = np.empty((np.size(r),np.size(th)),dtype=float)
     gsym = np.empty((np.size(r),int(np.size(th)/4)),dtype=float)
     
-
+    ###############################################################
+    # Radial
     for i in range(0,np.size(r),1):
         a[:,:,i] = np.logical_and(r[i]-dr/2<Distances,Distances<r[i]+dr/2)
 
+        # Give starting values of areas
+        area = 2*np.pi*r[i]*dr*np.ones(N,dtype=float)
+
+        # Calculate intersections for all walls
+        for k in range(0,np.size(wx)-1,1):
+            wallx = wx[k:k+2]
+            wally = wy[k:k+2]
+            
+            # Wall intersections
+            mu1, xinter1, yinter1, mu2, xinter2, yinter2 = intersectcirclewall(X,Y,wallx[0],wally[0],wallx[1],wally[1],r[i])
+            
+            # Calculate corresponding angles to intersection points
+            theta1 = np.arctan2(yinter1-Y,xinter1-X)
+            theta2 = np.arctan2(yinter2-Y,xinter2-X)
+
+            for j in range(0,N,1):
+                # 2 Intersections with 1 wall 
+                if 0 <= mu1[j] <= 1 and 0 <= mu2[j] <= 1:    #Check for intersection in wall
+                    # Segment to disregard
+                    angularsegment = np.min([(theta1[j]-theta2[j])%(2*np.pi),(theta2[j]-theta1[j])%(2*np.pi)])
+                    # Remove corresponding fraction from area
+                    area[j] -= r[i]*dr*angularsegment
+
+            #TODO intersections with different walls
+        
+        #area = np.where(area==0,dth/(2*np.pi),area)
+
+        # Exclude intersected parts from area
+
         gr[i] = np.sum(a[:,:,i])*L**2/(N**2*2*np.pi*r[i]*dr)
     
+    ######################################################################
+    # Angular
     for j in range(0,np.size(th),1):
     
         area = np.zeros(N,dtype=float)
@@ -170,7 +223,8 @@ def distributions():
         #gth[j] = np.sum(b[:,:,j])*L**2*2*np.pi/(N**2*dth)
         gth[j] = np.sum(b[:,:,j])*L**2/(N**2*np.mean(area))
 
-
+    #######################################################################3
+    # 2D
     for i in range(0,np.size(r),1):
         for j in range(0,np.size(th),1):
             c = np.multiply(a[:,:,i],b[:,:,j])
