@@ -125,7 +125,7 @@ def distributions():
     dth  = 2*np.pi/5e3
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
-    dxr  = 1e-2#1e-4
+    dxr  = 1e-3#1e-4
     dxth = 2*np.pi/(5*2**7)
     
     # r-dr/2     r=i*dxr       r+dr/2
@@ -365,8 +365,8 @@ def distributions():
         fig.colorbar(im,ax=ax6)
         
         lastslash = args.f.rfind('/')  
-        savename = args.f[0:lastslash+1]+'DF_'+args.f[lastslash+1:-4]+'.png'
-        plt.savefig(savename)
+        savename = args.f[0:lastslash+1]+'DF_'+args.f[lastslash+1:-4]+'.eps'
+        plt.savefig(savename, format='eps')
         print('Plot saved as',savename)
         
         plt.draw()
