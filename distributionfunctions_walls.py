@@ -121,12 +121,12 @@ def distributions():
     
 
     # Binwidth, determines the smoothness
-    dr   = L/2e2
-    dth  = 2*np.pi/2e3
+    dr   = L/1e2
+    dth  = 2*np.pi/5e1
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
-    dxr  = 5e-3#1e-4
-    dxth = 2*np.pi/(5*2**7)
+    dxr  = 1e-2#1e-4
+    dxth = 2*np.pi/(5*2**6)
     
     # r-dr/2     r=i*dxr       r+dr/2
     # [-------------------------]
@@ -238,7 +238,8 @@ def distributions():
 
                 # Exclude intersected parts from area
                 area[j] -= r[i]*dr*angularsegment
-        
+
+        #TODO only do check below if count == 0, for faster calculations
         # Check if circle completely outside domain
         for j in range(0,N,1):
             distance_to_corners = np.empty(np.size(wx)-1,dtype=float)
@@ -252,9 +253,9 @@ def distributions():
         
         #gr[i] = np.sum(a[:,:,i])*L**2/(N**2*2*np.pi*r[i]*dr)
         #gr[i] = np.sum(a[:,:,i])*L**2/(N**2*np.mean(area))
-        rhoexpected = N/L**2
-        rhomeasured = np.sum(a[:,:,i])/np.sum(area)
-        gr[i] = rhomeasured/rhoexpected
+        rho_expected = N/L**2
+        rho_measured = np.sum(a[:,:,i])/np.sum(area)
+        gr[i] = rho_measured/rho_expected
     
     ######################################################################
     # Angular
@@ -288,23 +289,46 @@ def distributions():
         area = np.where(area==0,dth/(2*np.pi),area)
 
         #gth[j] = np.sum(b[:,:,j])*L**2*2*np.pi/(N**2*dth)
-        gth[j] = np.sum(b[:,:,j])*L**2/(N**2*np.mean(area))
+        #gth[j] = np.sum(b[:,:,j])*L**2/(N**2*np.mean(area))
+        
+        rho_expected = N/L**2
+        rho_measured = np.sum(b[:,:,j])/np.sum(area)
+        gth[j] = rho_measured/rho_expected
 
     #######################################################################3
     # 2D
     for i in range(0,np.size(r),1):
         for j in range(0,np.size(th),1):
             c = np.multiply(a[:,:,i],b[:,:,j])
-   
-            #TODO check if the segment is inside or outside the domain
-
+            
+            # Give starting values of areas
+            area = r[i]*dr*dth*np.ones(N,dtype=float)
+           
+            # Only check if count == 0
+            #TODO adapt here 
+            # Check for angle th[j] with which wall we intersect
+            for k in range(0,np.size(wx)-1,1):
+                wallx = wx[k:k+2]
+                wally = wy[k:k+2]
+                
+                # Wall intersections for all particles
+                labda, mu, xinter, yinter = intersectwall(X,Y,wallx[0],wally[0],wallx[1],wally[1],th[j])
+                for l in range(0,N,1):
+                    if labda[l] > 0 and 0 <= mu[l] <= 1:    #Check for intersection
+                        distance_to_wall = np.sqrt((X[l]-xinter[l])**2+(Y[l]-yinter[l])**2)
+                        if distance_to_wall <= r[i]: # Radius larger, then outside domain
+                            area[l] = 0                             
+            
             # If inside, then include in the calculation 
             
             # If outside, then don't include
 
-            g[i,j] = np.sum(c)*L**2/(N**2*r[i]*dr*dth)
-            #print(r[i]*dr*dth)
-    
+            #g[i,j] = np.sum(c)*L**2/(N**2*r[i]*dr*dth)
+            
+            rho_expected = N/L**2
+            rho_measured = np.sum(c)/np.sum(area)
+            g[i,j] = rho_measured/rho_expected
+
     
     print('Average g = ',np.mean(g))
 
