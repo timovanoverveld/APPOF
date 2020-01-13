@@ -122,7 +122,7 @@ def distributions():
 
     # Binwidth, determines the smoothness
     dr   = L/2e2
-    dth  = 2*np.pi/5e3
+    dth  = 2*np.pi/2e3
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
     dxr  = 5e-3#1e-4
@@ -183,6 +183,8 @@ def distributions():
                     angularsegment = np.min([(theta1[j]-theta2[j])%(2*np.pi),(theta2[j]-theta1[j])%(2*np.pi)])
                     # Remove corresponding fraction from area
                     area[j] -= r[i]*dr*angularsegment
+                    #if angularsegment > np.pi/1.1:
+                    #    print(k,X[j],Y[j],r[i],angularsegment)
 
                 # 1 Intersection with 1 wall: store for later
                 if np.logical_xor(0 <= mu1[j] <= 1, 0 <= mu2[j] <= 1):
@@ -192,9 +194,10 @@ def distributions():
                         intersect[j,k] = theta2[j]
        
         # Choose pseudo-angle:
-        thps = 0
+        thps = 1
 
-        # Do the intersections:
+        # For the intersections with multiple walls (such as cases with corners) we have the information stored in intersect[:,:], which contains the angles at which the circle intersects with a wall and based on the 2nd index, which wall it intersects with
+        # Question now is if the part between theta1 and theta2 lies inside or outside the domain (could be both). For this we consider a pseudo-angle and see if it first intersects with a wall or with the circle at radius r[i].
         for j in range(0,N,1):
             if np.count_nonzero(intersect[j,:])>0:
                 # Intersection with circle always at radius r[i]
@@ -208,6 +211,7 @@ def distributions():
                     if labda >= 0 and 0 <= mu <= 1:
                         #print(j,labda,mu)
                         break
+                    #print(xinter,yinter)
 
                 # Distance to wall
                 D = np.sqrt((X[j]-xinter)**2 + (Y[j]-yinter)**2)
@@ -234,10 +238,23 @@ def distributions():
 
                 # Exclude intersected parts from area
                 area[j] -= r[i]*dr*angularsegment
-
-
+        
+        # Check if circle completely outside domain
+        for j in range(0,N,1):
+            distance_to_corners = np.empty(np.size(wx)-1,dtype=float)
+            for k in range(0,np.size(wx)-1,1):
+                distance_to_corners[k] = np.sqrt((X[j]-wx[k])**2+(Y[j]-wy[k])**2)
+            
+            # Full circle outside of domain, (if domain is convex) so do not count full area
+            if np.all(distance_to_corners <= r[i]):
+                #print(r[i],distance_to_corners)
+                area[j] = 0
+        
         #gr[i] = np.sum(a[:,:,i])*L**2/(N**2*2*np.pi*r[i]*dr)
-        gr[i] = np.sum(a[:,:,i])*L**2/(N**2*np.mean(area))
+        #gr[i] = np.sum(a[:,:,i])*L**2/(N**2*np.mean(area))
+        rhoexpected = N/L**2
+        rhomeasured = np.sum(a[:,:,i])/np.sum(area)
+        gr[i] = rhomeasured/rhoexpected
     
     ######################################################################
     # Angular
@@ -372,8 +389,9 @@ def distributions():
         fig.colorbar(im,ax=ax6)
         
         lastslash = args.f.rfind('/')  
-        savename = args.f[0:lastslash+1]+'DF_'+args.f[lastslash+1:-4]+'.eps'
-        plt.savefig(savename, format='eps')
+        #savename = args.f[0:lastslash+1]+'DF_'+args.f[lastslash+1:-4]+'.eps'
+        savename = args.f[0:lastslash+1]+'DF_'+args.f[lastslash+1:-4]+'.png'
+        plt.savefig(savename)#, format='eps')
         print('Plot saved as',savename)
         
         plt.draw()
