@@ -66,6 +66,10 @@ def distributions():
     parser.add_argument('-L', type=float, help='Maximum correlation/domain size')
     parser.add_argument('-wx', type=float, nargs='+', help='Wall endpoints x-coordinates')
     parser.add_argument('-wy', type=float, nargs='+', help='Wall endpoints y-coordinates')
+    parser.add_argument('-dr', type=float, help='Radial bin size')
+    parser.add_argument('-dth', type=float, help='Angular bin size')
+    parser.add_argument('-dxr', type=float, help='Radial resolution')
+    parser.add_argument('-dxth', type=float, help='Angular resolution')
     args = parser.parse_args()
    
     #Read data
@@ -128,6 +132,16 @@ def distributions():
     dxr  = 1e-2#1e-4
     dxth = 2*np.pi/(5*2**6)
     
+    # If defined, then overwrite
+    if args.dr:
+        dr = args.dr
+    if args.dth:
+        dth = args.dth
+    if args.dxr:
+        dxr = args.dxr
+    if args.dxth:
+        dxth = args.dxth
+        
     # r-dr/2     r=i*dxr       r+dr/2
     # [-------------------------]
     #  [-------------------------]
@@ -254,8 +268,11 @@ def distributions():
         #gr[i] = np.sum(a[:,:,i])*L**2/(N**2*2*np.pi*r[i]*dr)
         #gr[i] = np.sum(a[:,:,i])*L**2/(N**2*np.mean(area))
         rho_expected = N/L**2
-        rho_measured = np.sum(a[:,:,i])/np.sum(area)
-        gr[i] = rho_measured/rho_expected
+        if np.sum(area) > 0:
+            rho_measured = np.sum(a[:,:,i])/np.sum(area)
+            gr[i] = rho_measured/rho_expected
+        else:
+            gr[i] = 0
     
     ######################################################################
     # Angular
