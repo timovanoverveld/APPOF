@@ -24,7 +24,7 @@ def fakepattern():
     parser.add_argument('-l', type=int, help='Number of lines')
     parser.add_argument('-n', type=float, help='Add noise to the pattern by specifying an amplitude')
     parser.add_argument('-p', action='store_true', help='Enable plotting')
-    parser.add_argument('-f', action='store_true', help='File name')
+    parser.add_argument('-f', type=str, help='File name')
     args = parser.parse_args()
    
     #Fake data
