@@ -122,7 +122,7 @@ def distributions():
 
     # Binwidth, determines the smoothness
     dr   = L/1e2
-    dth  = 2*np.pi/5e1
+    dth  = 2*np.pi/1e2
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
     dxr  = 1e-2#1e-4
@@ -303,9 +303,7 @@ def distributions():
             
             # Give starting values of areas
             area = r[i]*dr*dth*np.ones(N,dtype=float)
-           
-            # Only check if count == 0
-            #TODO adapt here 
+
             # Check for angle th[j] with which wall we intersect
             for k in range(0,np.size(wx)-1,1):
                 wallx = wx[k:k+2]
@@ -313,24 +311,24 @@ def distributions():
                 
                 # Wall intersections for all particles
                 labda, mu, xinter, yinter = intersectwall(X,Y,wallx[0],wally[0],wallx[1],wally[1],th[j])
-                for l in range(0,N,1):
-                    if labda[l] > 0 and 0 <= mu[l] <= 1:    #Check for intersection
-                        distance_to_wall = np.sqrt((X[l]-xinter[l])**2+(Y[l]-yinter[l])**2)
-                        if distance_to_wall <= r[i]: # Radius larger, then outside domain
-                            area[l] = 0                             
+            for l in range(0,N,1):
+                if labda[l] > 0 and 0 <= mu[l] <= 1:    #Check for intersection
+                    distance_to_wall = np.sqrt((X[l]-xinter[l])**2+(Y[l]-yinter[l])**2)
+                    if distance_to_wall <= r[i]-dr/2: # Radius larger, then outside domain
+                        area[l] = 0                             
             
-            # If inside, then include in the calculation 
-            
-            # If outside, then don't include
-
             #g[i,j] = np.sum(c)*L**2/(N**2*r[i]*dr*dth)
             
             rho_expected = N/L**2
-            rho_measured = np.sum(c)/np.sum(area)
-            g[i,j] = rho_measured/rho_expected
+            if np.sum(area) > 0:
+                rho_measured = np.sum(c)/np.sum(area)
+                g[i,j] = rho_measured/rho_expected
+            else:
+                g[i,j] = 0
 
-    
-    print('Average g = ',np.mean(g))
+    print('Average gr = ',np.mean(gr))
+    print('Average gth = ',np.mean(gth))
+    print('Average g2D = ',np.mean(g))
 
     # Calculate the (assumed) symmetric quadrant of g2D
     for i in range(0,int(np.size(th)/4),1):
