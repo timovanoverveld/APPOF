@@ -20,21 +20,46 @@ def plot_DF():
     # Argument parser
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', type=str, help='File')
-
+    parser.add_argument('-s', type=str, help='Set of files')
     args = parser.parse_args()
    
     #Read data
 
-    if not args.f:
+    if args.f:
+        with np.load(args.f) as data:
+            r   = data['arr_0']
+            th  = data['arr_1']
+            gr  = data['arr_2']
+            gth = data['arr_3']
+            g   = data['arr_4']
+
+    elif args.s:
+        filelist = np.empty(0,dtype=str)
+        for file in os.listdir('.'):
+            if args.s in file and file.endswith('.npz'):
+                filelist = np.append(filelist,file)
+        
+        print(filelist)
+        
+        N = np.size(filelist)
+        for i in range(0,N,1):
+            with np.load(filelist[i]) as data:
+                if i == 0: 
+                    r   = data['arr_0']
+                    th  = data['arr_1']
+                    nr  = np.size(r)
+                    nth = np.size(th)
+
+                    gr  = np.zeros(nr,dtype=float)
+                    gth = np.zeros(nth,dtype=float)
+                    g   = np.zeros((nr,nth),dtype=float)
+                gr  += data['arr_2']/N
+                gth += data['arr_3']/N
+                g   += data['arr_4']/N
+         
+    else:
         print('No input file found')
         quit()
-    elif args.f:
-        with np.load(args.f) as data:
-            r   = data['arr_0']# th, gr, gth, g = np.load(args.f)
-            th  = data['arr_1']# th, gr, gth, g = np.load(args.f)
-            gr  = data['arr_2']# th, gr, gth, g = np.load(args.f)
-            gth = data['arr_3']# th, gr, gth, g = np.load(args.f)
-            g   = data['arr_4']# th, gr, gth, g = np.load(args.f)
     
     T,R = np.meshgrid(th,r)
     
@@ -62,6 +87,7 @@ def plot_DF():
     ax4 = fig.add_subplot(234)
     ax5 = fig.add_subplot(235, polar=True)
 
+    ax1.axhline(1,linestyle='--',color='k')
     ax1.plot(r,gr)
     ax1.set_xlabel('$r$')
     ax1.set_ylabel('$g(r)$')
@@ -72,11 +98,13 @@ def plot_DF():
    
     ax2.plot(th,gth)
     ax2.set_title('Angular distribution function')
-
-    im = ax3.contourf(T,R,g,cmap="jet",levels=100)
-    ax3.set_title('2D distribution function')
-    fig.colorbar(im,ax=ax3)
     
+    levels = np.linspace(0,2,101)
+    im = ax3.contourf(T,R,g,cmap="bwr",levels=levels,vmin=0,vmax=2,extend='both')
+    ax3.set_title('2D distribution function')
+    fig.colorbar(im,ax=ax3,ticks=np.linspace(0,2,11))
+    
+    ax4.axhline(1,linestyle='--',color='k',label='Uncorrelated system')
     xdir = np.argmin(abs(thsym))
     ydir = np.argmin(abs(thsym-np.pi/2))
     x = np.where(Tsym==thsym[xdir])
@@ -89,14 +117,17 @@ def plot_DF():
     ax4.legend()
     ax4.set_title('1D line plots of 2D distribution function')
     
-    im = ax5.contourf(Tsym,Rsym,gsym,cmap="jet",levels=100)
+    im = ax5.contourf(Tsym,Rsym,gsym,cmap="bwr",levels=levels,vmin=0,vmax=2,extend='both')
     ax5.set_title('4-Quadrant averaged 2D distribution function')
     ax5.set_thetamin(0)
     ax5.set_thetamax(90)
-    fig.colorbar(im,ax=ax5)
-    
-    lastslash = args.f.rfind('/')  
-    savename = args.f[0:lastslash+1]+'DF_'+args.f[lastslash+1:-4]+'.png'
+    fig.colorbar(im,ax=ax5,ticks=np.linspace(0,2,11))
+   
+    if args.f:
+        lastslash = args.f.rfind('/')  
+        savename = args.f[0:lastslash+1]+'DF_'+args.f[lastslash+1:-4]+'.png'
+    elif args.s:
+        savename = args.s+'DF.png'
     plt.savefig(savename)
     print('Plot saved as',savename)
         
