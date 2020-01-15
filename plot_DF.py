@@ -20,6 +20,7 @@ def plot_DF():
     # Argument parser
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', type=str, help='File')
+
     args = parser.parse_args()
    
     #Read data
@@ -28,30 +29,48 @@ def plot_DF():
         print('No input file found')
         quit()
     elif args.f:
-        r, th, gr, gth, g = np.load(args.f)
+        with np.load(args.f) as data:
+            r   = data['arr_0']# th, gr, gth, g = np.load(args.f)
+            th  = data['arr_1']# th, gr, gth, g = np.load(args.f)
+            gr  = data['arr_2']# th, gr, gth, g = np.load(args.f)
+            gth = data['arr_3']# th, gr, gth, g = np.load(args.f)
+            g   = data['arr_4']# th, gr, gth, g = np.load(args.f)
+    
+    T,R = np.meshgrid(th,r)
+    
+    dxth = th[5]-th[4]
+    halfsize = int(np.size(th)/2)
 
+    thsym  = np.linspace(0,np.pi/2,(np.pi/2)/dxth) # Radii to calculate g
+    
+    Tsym,Rsym = np.meshgrid(thsym,r)
+    
+    gsym = np.empty((np.size(r),int(np.size(th)/4)),dtype=float)
+
+    # Calculate the (assumed) symmetric quadrant of g2D
+    for i in range(0,int(np.size(th)/4),1):
+        gsym[:,i] = (g[:,i]+g[:,-i]+g[:,halfsize+i]+g[:,halfsize-i])/4
+    
     #Average
 
     # Plot
     
     fig = plt.figure(figsize=(24,16))
     ax1 = fig.add_subplot(231)
-    ax2 = fig.add_subplot(232)
+    ax2 = fig.add_subplot(232, polar=True)
     ax3 = fig.add_subplot(233, polar=True)
-    ax4 = fig.add_subplot(234, polar=True)
+    ax4 = fig.add_subplot(234)
     ax5 = fig.add_subplot(235, polar=True)
 
-    ax1.plot(r,gr,label='dr = '+format(dr,'.1e'))
+    ax1.plot(r,gr)
     ax1.set_xlabel('$r$')
     ax1.set_ylabel('$g(r)$')
     ax1.grid()
     ax1.set_xlim(0)
     ax1.set_ylim(0)
-    ax1.legend()
     ax1.set_title('Radial distribution function')
    
-    ax2.plot(th,gth,label='dth = '+format(dth,'.1e'))
-    ax2.legend()
+    ax2.plot(th,gth)
     ax2.set_title('Angular distribution function')
 
     im = ax3.contourf(T,R,g,cmap="jet",levels=100)
