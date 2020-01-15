@@ -399,7 +399,7 @@ def distributions():
     if not args.t:
         lastslash = args.f.rfind('/')  
         savename = args.f[0:lastslash+1]+'g2D_'+args.f[lastslash+1:-4]
-        np.savez(savename,r,th,g)
+        np.savez(savename,r,th,gr,gth,g)
 
         print('g(r,theta) stored in',savename)
     
