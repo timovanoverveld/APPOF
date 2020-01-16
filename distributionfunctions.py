@@ -20,6 +20,7 @@ def distributions():
     # Argument parser
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', type=str, help='File')
+    parser.add_argument('-t', type=int, help='Plot type: 4 radial, 1 angular, 2 2D, 3 all')
     parser.add_argument('-r', type=float, help='Radial distribution function values')
     parser.add_argument('-p', action='store_true', help='Enable plotting')
     parser.add_argument('-P', action='store_true', help='Domain is periodic')
@@ -137,28 +138,30 @@ def distributions():
     g   = np.empty((np.size(r),np.size(th)),dtype=float)
     gsym = np.empty((np.size(r),int(np.size(th)/4)),dtype=float)
     
+    if args.t == 4 or args.t == 3 or not args.t:
+        for i in range(0,np.size(r),1):
+            a[:,:,i] = np.logical_and(r[i]-dr/2<Distances,Distances<r[i]+dr/2)
 
-    for i in range(0,np.size(r),1):
-        a[:,:,i] = np.logical_and(r[i]-dr/2<Distances,Distances<r[i]+dr/2)
+            gr[i] = np.sum(a[:,:,i])*L**2/(N**2*2*np.pi*r[i]*dr)
 
-        gr[i] = np.sum(a[:,:,i])*L**2/(N**2*2*np.pi*r[i]*dr)
-
-    for j in range(0,np.size(th),1):
-    
-        b[:,:,j] = np.logical_and(th[j]-dth/2<Angles,Angles<th[j]+dth/2)
-    
-        if th[j]-dth/2 < -np.pi:
-            b[:,:,j] += np.logical_and(th[j]-dth/2+2*np.pi<Angles,Angles<th[j]+dth/2+2*np.pi)
-        if th[j]+dth/2 > np.pi:
-            b[:,:,j] += np.logical_and(th[j]-dth/2-2*np.pi<Angles,Angles<th[j]+dth/2-2*np.pi)
-    
-        gth[j] = np.sum(b[:,:,j])*L**2*2*np.pi/(N**2*dth)
-
-    for i in range(0,np.size(r),1):
+    if args.t == 1 or args.t == 3 or not args.t:
         for j in range(0,np.size(th),1):
-            c = np.multiply(a[:,:,i],b[:,:,j])
-    
-            g[i,j] = np.sum(c)*L**2/(N**2*r[i]*dr*dth)
+        
+            b[:,:,j] = np.logical_and(th[j]-dth/2<Angles,Angles<th[j]+dth/2)
+        
+            if th[j]-dth/2 < -np.pi:
+                b[:,:,j] += np.logical_and(th[j]-dth/2+2*np.pi<Angles,Angles<th[j]+dth/2+2*np.pi)
+            if th[j]+dth/2 > np.pi:
+                b[:,:,j] += np.logical_and(th[j]-dth/2-2*np.pi<Angles,Angles<th[j]+dth/2-2*np.pi)
+        
+            gth[j] = np.sum(b[:,:,j])*L**2*2*np.pi/(N**2*dth)
+
+    if args.t == 2 or args.t == 3 or not args.t:
+        for i in range(0,np.size(r),1):
+            for j in range(0,np.size(th),1):
+                c = np.multiply(a[:,:,i],b[:,:,j])
+        
+                g[i,j] = np.sum(c)*L**2/(N**2*r[i]*dr*dth)
     
     
     print('Average g = ',np.mean(g))
@@ -183,6 +186,34 @@ def distributions():
     # Plot
     
     if args.p:
+        if args.t == 4:
+            plt.figure(figsize=(8,8))
+            plt.plot(r,gr,label='dr = '+format(dr,'.1e'))
+            plt.xlabel('$r$')
+            plt.ylabel('$g(r)$')
+            plt.grid()
+            plt.xlim(0)
+            plt.ylim(0)
+            plt.legend()
+            plt.title('Radial distribution function')
+
+        elif args.t == 1:
+            plt.figure(figsize=(8,8))
+            plt.polar(th,gth,label='dth = '+format(dth,'.1e'))
+            plt.legend()
+            plt.title('Angular distribution function')
+
+        elif args.t == 2:
+            plt.figure(figsize=(8,8))
+            if args.l:
+                im = plt.contourf(T,R,glog,cmap='bwr',levels=100, vmin=np.min(glog), vmax=np.max(glog    ))
+                plt.title('Log10 of 2D distribution function')
+            else:
+                im = plt.contourf(T,R,g,cmap="jet",levels=100)
+                plt.title('2D distribution function')
+            plt.colorbar(im)
+
+        elif args.t == 3 or not args.t:
         fig = plt.figure(figsize=(24,16))
         ax1 = fig.add_subplot(231)
         ax2 = fig.add_subplot(232)
