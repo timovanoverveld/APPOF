@@ -214,65 +214,65 @@ def distributions():
             plt.colorbar(im)
 
         elif args.t == 3 or not args.t:
-        fig = plt.figure(figsize=(24,16))
-        ax1 = fig.add_subplot(231)
-        ax2 = fig.add_subplot(232)
-        ax3 = fig.add_subplot(234, polar=True)
-        ax4 = fig.add_subplot(235, polar=True)
-        ax5 = fig.add_subplot(233)
-        ax6 = fig.add_subplot(236, polar=True)
-
-        ax1.plot(X,Y,'.')
-        ax1.set_xlabel('$x$')
-        ax1.set_ylabel('$y$')
-        #ax1.set_xlim(0, L)
-        #ax1.set_ylim(0, L)
-        ax1.set_aspect('equal')
-        ax1.set_title('Pattern')
-
-        if args.wx and args.wy:
-            for i in range(0,np.size(wx),2):
-                ax1.plot(wx[i:i+2],wy[i:i+2],'k')
-        
-        ax2.plot(r,gr,label='dr = '+format(dr,'.1e'))
-        ax2.set_xlabel('$r$')
-        ax2.set_ylabel('$g(r)$')
-        ax2.grid()
-        ax2.set_xlim(-0.01,M)
-        ax2.legend()
-        ax2.set_title('Radial distribution function')
-   
-        ax3.plot(th,gth,label='dth = '+format(dth,'.1e'))
-        ax3.legend()
-        ax3.set_title('Angular distribution function')
-
-        if args.l:
-            im = ax4.contourf(T,R,glog,cmap='bwr',levels=100, vmin=np.min(glog), vmax=np.max(glog))
-            ax4.set_title('Log10 of 2D distribution function')
-        else: 
-            im = ax4.contourf(T,R,g,cmap="jet",levels=100)
-            ax4.set_title('2D distribution function')
-        fig.colorbar(im,ax=ax4)
-        
-        xdir = np.argmin(abs(thsym))
-        ydir = np.argmin(abs(thsym-np.pi/2))
-        x = np.where(Tsym==thsym[xdir])
-        ax5.plot(Rsym[x],gsym[x],label='x-direction')
-        x = np.where(Tsym==thsym[ydir])
-        ax5.plot(Rsym[x],gsym[x],label='y-direction')
-        ax5.grid()
-        ax5.legend()
-        ax5.set_title('1D line plots of 2D distribution function')
-        
-        if args.l:
-            im = ax6.contourf(Tsym,Rsym,gsymlog,cmap='bwr',levels=100, vmin=np.min(gsymlog), vmax=np.max(gsymlog))
-            ax6.set_title('Log10 of 2D distribution function')
-        else: 
-            im = ax6.contourf(Tsym,Rsym,gsym,cmap="jet",levels=100)
-            ax6.set_title('2D distribution function')
-        ax6.set_thetamin(0)
-        ax6.set_thetamax(90)
-        fig.colorbar(im,ax=ax6)
+            fig = plt.figure(figsize=(24,16))
+            ax1 = fig.add_subplot(231)
+            ax2 = fig.add_subplot(232)
+            ax3 = fig.add_subplot(234, polar=True)
+            ax4 = fig.add_subplot(235, polar=True)
+            ax5 = fig.add_subplot(233)
+            ax6 = fig.add_subplot(236, polar=True)
+    
+            ax1.plot(X,Y,'.')
+            ax1.set_xlabel('$x$')
+            ax1.set_ylabel('$y$')
+            #ax1.set_xlim(0, L)
+            #ax1.set_ylim(0, L)
+            ax1.set_aspect('equal')
+            ax1.set_title('Pattern')
+    
+            if args.wx and args.wy:
+                for i in range(0,np.size(wx),2):
+                    ax1.plot(wx[i:i+2],wy[i:i+2],'k')
+            
+            ax2.plot(r,gr,label='dr = '+format(dr,'.1e'))
+            ax2.set_xlabel('$r$')
+            ax2.set_ylabel('$g(r)$')
+            ax2.grid()
+            ax2.set_xlim(-0.01,M)
+            ax2.legend()
+            ax2.set_title('Radial distribution function')
+       
+            ax3.plot(th,gth,label='dth = '+format(dth,'.1e'))
+            ax3.legend()
+            ax3.set_title('Angular distribution function')
+    
+            if args.l:
+                im = ax4.contourf(T,R,glog,cmap='bwr',levels=100, vmin=np.min(glog), vmax=np.max(glog))
+                ax4.set_title('Log10 of 2D distribution function')
+            else: 
+                im = ax4.contourf(T,R,g,cmap="jet",levels=100)
+                ax4.set_title('2D distribution function')
+            fig.colorbar(im,ax=ax4)
+            
+            xdir = np.argmin(abs(thsym))
+            ydir = np.argmin(abs(thsym-np.pi/2))
+            x = np.where(Tsym==thsym[xdir])
+            ax5.plot(Rsym[x],gsym[x],label='x-direction')
+            x = np.where(Tsym==thsym[ydir])
+            ax5.plot(Rsym[x],gsym[x],label='y-direction')
+            ax5.grid()
+            ax5.legend()
+            ax5.set_title('1D line plots of 2D distribution function')
+            
+            if args.l:
+                im = ax6.contourf(Tsym,Rsym,gsymlog,cmap='bwr',levels=100, vmin=np.min(gsymlog), vmax=np.max(gsymlog))
+                ax6.set_title('Log10 of 2D distribution function')
+            else: 
+                im = ax6.contourf(Tsym,Rsym,gsym,cmap="jet",levels=100)
+                ax6.set_title('2D distribution function')
+            ax6.set_thetamin(0)
+            ax6.set_thetamax(90)
+            fig.colorbar(im,ax=ax6)
         
         lastslash = args.f.rfind('/')  
         savename = args.f[0:lastslash+1]+'DF_'+args.f[lastslash+1:-4]+'.png'
