@@ -61,11 +61,27 @@ def plot_DF():
         print('No input file found')
         quit()
     
-    T,R = np.meshgrid(th,r)
     
     dxth = th[5]-th[4]
     halfsize = int(np.size(th)/2)
+    
+    # Most probable angle offset:
+    angleoffset = th[np.argmax(gth)]-np.pi/2
+    print('Offset angle = ',angleoffset/np.pi*180)
+     
+    th -= angleoffset
+    
+    th = np.where(th>np.pi,th-2*np.pi,th)
+    th = np.where(th<-np.pi,th+2*np.pi,th)
 
+    # Sort
+    idx = np.argsort(th)
+    th  = th[idx]
+    gth = gth[idx] 
+    g   = g[:,idx] 
+
+    T,R = np.meshgrid(th,r)
+    
     thsym  = np.linspace(0,np.pi/2,(np.pi/2)/dxth) # Radii to calculate g
     
     Tsym,Rsym = np.meshgrid(thsym,r)
