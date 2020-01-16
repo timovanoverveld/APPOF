@@ -25,6 +25,10 @@ def distributions():
     parser.add_argument('-P', action='store_true', help='Domain is periodic')
     parser.add_argument('-l', action='store_true', help='Log10 colormap')
     parser.add_argument('-L', type=float, help='Maximum correlation/domain size')
+    parser.add_argument('-dr', type=float, help='Radial bin size')
+    parser.add_argument('-dth', type=float, help='Angular bin size')
+    parser.add_argument('-dxr', type=float, help='Radial resolution')
+    parser.add_argument('-dxth', type=float, help='Angular resolution')
     parser.add_argument('-wx', type=float, nargs='+', help='Wall endpoints x-coordinates')
     parser.add_argument('-wy', type=float, nargs='+', help='Wall endpoints y-coordinates')
     args = parser.parse_args()
@@ -91,12 +95,22 @@ def distributions():
     
 
     # Binwidth, determines the smoothness
-    dr   = L/2e2
-    dth  = 2*np.pi/1e3
+    dr   = L/1e2
+    dth  = 2*np.pi/1e2
     
     #Integration steps, thus regions [theta-dth/2,theta+dth/2] overlap!
-    dxr  = 5e-2#1e-4
-    dxth = 2*np.pi/(5*2**7)
+    dxr  = 1e-2#1e-4
+    dxth = 2*np.pi/(5*2**6)
+    
+    # If defined, then overwrite
+    if args.dr:
+        dr = args.dr
+    if args.dth:
+        dth = args.dth
+    if args.dxr:
+        dxr = args.dxr
+    if args.dxth:
+        dxth = args.dxth
     
     # r-dr/2     r=i*dxr       r+dr/2
     # [-------------------------]
