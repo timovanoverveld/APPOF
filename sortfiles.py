@@ -15,10 +15,6 @@ import matplotlib.pyplot as plt
 
 ############################################################################
 def sortfiles():
-    # Argument parser
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-s', action='store_true', help='Sort subdirectories')
-    args = parser.parse_args()
    
     # Directories
     basedir = os.getcwd()
