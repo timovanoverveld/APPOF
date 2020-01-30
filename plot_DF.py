@@ -21,6 +21,7 @@ def plot_DF():
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', type=str, help='File')
     parser.add_argument('-s', type=str, help='Set of files')
+    parser.add_argument('-t', action='store_true', help='Angle offset')
     args = parser.parse_args()
    
     #Read data
@@ -65,11 +66,11 @@ def plot_DF():
     dxth = th[5]-th[4]
     halfsize = int(np.size(th)/2)
     
-    # Most probable angle offset:
-    angleoffset = th[np.argmax(gth)]-np.pi/2
-    print('Offset angle = ',angleoffset/np.pi*180)
-     
-    th -= angleoffset
+    if args.t: 
+        # Most probable angle offset:
+        angleoffset = th[np.argmax(gth)]-np.pi/2
+        print('Offset angle = ',angleoffset/np.pi*180)
+        th -= angleoffset
     
     th = np.where(th>np.pi,th-2*np.pi,th)
     th = np.where(th<-np.pi,th+2*np.pi,th)
