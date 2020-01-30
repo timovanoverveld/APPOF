@@ -162,7 +162,7 @@ def distributions():
                 c = np.multiply(a[:,:,i],b[:,:,j])
         
                 g[i,j] = np.sum(c)*L**2/(N**2*r[i]*dr*dth)
-    
+            print(i/np.size(r))
     
     print('Average g = ',np.mean(g))
 
@@ -204,9 +204,9 @@ def distributions():
             plt.title('Angular distribution function')
 
         elif args.t == 2:
-            plt.figure(figsize=(8,8))
+            fig, ax = plt.subplots(figsize=(8,8),subplot_kw=dict(projection='polar'))
             if args.l:
-                im = plt.contourf(T,R,glog,cmap='bwr',levels=100, vmin=np.min(glog), vmax=np.max(glog    ))
+                im = ax.contourf(T,R,glog,cmap='bwr',levels=100, vmin=np.min(glog), vmax=np.max(glog    ))
                 plt.title('Log10 of 2D distribution function')
             else:
                 im = plt.contourf(T,R,g,cmap="jet",levels=100)
