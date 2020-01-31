@@ -21,6 +21,7 @@ def plot_DF():
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', type=str, help='File')
     parser.add_argument('-s', type=str, help='Set of files')
+    parser.add_argument('-v', type=float, help='Maximum color value of plot')
     parser.add_argument('-t', action='store_true', help='Angle offset')
     args = parser.parse_args()
    
@@ -61,7 +62,11 @@ def plot_DF():
     else:
         print('No input file found')
         quit()
-    
+
+    if args.v:
+        vmax = args.v
+    else:
+        vmax = 2
     
     dxth = th[5]-th[4]
     halfsize = int(np.size(th)/2)
@@ -116,10 +121,10 @@ def plot_DF():
     ax2.plot(th,gth)
     ax2.set_title('Angular distribution function')
     
-    levels = np.linspace(0,2,101)
-    im = ax3.contourf(T,R,g,cmap="bwr",levels=levels,vmin=0,vmax=2,extend='both')
+    levels = np.linspace(0,vmax,101)
+    im = ax3.contourf(T,R,g,cmap="bwr",levels=levels,vmin=0,vmax=vmax,extend='both')
     ax3.set_title('2D distribution function')
-    fig.colorbar(im,ax=ax3,ticks=np.linspace(0,2,11))
+    fig.colorbar(im,ax=ax3,ticks=np.linspace(0,vmax,11))
     
     ax4.axhline(1,linestyle='--',color='k',label='Uncorrelated system')
     xdir = np.argmin(abs(thsym))
@@ -134,11 +139,11 @@ def plot_DF():
     ax4.legend()
     ax4.set_title('1D line plots of 2D distribution function')
     
-    im = ax5.contourf(Tsym,Rsym,gsym,cmap="bwr",levels=levels,vmin=0,vmax=2,extend='both')
+    im = ax5.contourf(Tsym,Rsym,gsym,cmap="bwr",levels=levels,vmin=0,vmax=vmax,extend='both')
     ax5.set_title('4-Quadrant averaged 2D distribution function')
     ax5.set_thetamin(0)
     ax5.set_thetamax(90)
-    fig.colorbar(im,ax=ax5,ticks=np.linspace(0,2,11))
+    fig.colorbar(im,ax=ax5,ticks=np.linspace(0,vmax,11))
    
     if args.f:
         lastslash = args.f.rfind('/')  
