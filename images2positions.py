@@ -273,9 +273,10 @@ def main():
             plt.scatter(xprojected,0*xprojected,color='blue',label='projected positions')
             plt.scatter(xreal,0*xreal,color='red',label='real positions')
             x = np.linspace(np.min((np.min(xprojected),np.min(xreal))),np.max((np.max(xprojected),np.max(xreal))),100)
-            plt.fill_between(x,0,H(x),color='blue',alpha=0.1)
 
             if reconstruction:
+                plt.fill_between(x,0,H(x),color='blue',alpha=0.1)
+                
                 data = (xprojected,H,xc[0],Hc[0])
                 xw = optimization.root(intersection,xprojected,args=data)
                 xw = xw.x
