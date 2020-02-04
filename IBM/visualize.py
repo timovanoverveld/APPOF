@@ -16,6 +16,14 @@ import warnings
 warnings.filterwarnings("ignore")
 
 ############################################################################
+# Plot circles
+def circle(x,y,r):
+    th = np.linspace(0,2*np.pi,100)
+    
+    for i in range(0,np.size(x),1):
+        z = plt.plot(x[i]+r*np.cos(th),y[i]+r*np.sin(th))
+        plt.scatter(x[i],y[i],color=z[0].get_color())
+
 def visualize():
     # Argument parser
     parser = argparse.ArgumentParser()
@@ -24,7 +32,8 @@ def visualize():
     args = parser.parse_args()
    
     #Initial data
-   
+    radius = 0.5
+
     if args.d:
         data = np.loadtxt(args.d+'position_wall_segments.txt')
         iw = data[:,0]
@@ -51,7 +60,7 @@ def visualize():
     plt.figure(figsize=(12,12))
     plt.plot(xw,yw)
     
-    plt.scatter(x,y)
+    circle(x,y,radius)
 
     plt.axes().set_aspect('equal')
     plt.grid()
@@ -63,6 +72,7 @@ def visualize():
     plt.close()
 
     # Loop over particles
+    radius_norm = 2*radius/(np.max(xw)-np.min(xw))
     plt.figure(figsize=(12,12))
     for i in range(1,np.size(i)+1,1):
         string = args.d+'particlechar'+str(i).zfill(3)
@@ -87,8 +97,9 @@ def visualize():
         w = data[:,10]
 
 
-        plt.plot(x,y)
-        plt.scatter(x,y)
+        #plt.plot(x,y)
+        #plt.scatter(x,y)
+        circle(x,y,radius_norm)
 
     plt.axes().set_aspect('equal')
     plt.grid()
