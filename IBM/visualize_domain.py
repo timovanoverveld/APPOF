@@ -19,12 +19,17 @@ warnings.filterwarnings("ignore")
 # Plot circles
 def circle(x,y,r):
     th = np.linspace(0,2*np.pi,100)
-    
-    for i in range(0,np.size(x),1):
-        z = plt.plot(x[i]+r*np.cos(th),y[i]+r*np.sin(th))
-        plt.scatter(x[i],y[i],color=z[0].get_color())
+   
+    try:
+        for i in range(0,np.size(x),1):
+            z = plt.plot(x[i]+r*np.cos(th),y[i]+r*np.sin(th))
+            plt.scatter(x[i],y[i],color=z[0].get_color())
+    except:
+        z = plt.plot(x+r*np.cos(th),y+r*np.sin(th))
+        plt.scatter(x,y,color=z[0].get_color())
 
-def visualize():
+
+def visualize_domain():
     # Argument parser
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', type=str, help='File')
@@ -115,4 +120,4 @@ def visualize():
     print('Done')
 
 if __name__ == "__main__":  
-    visualize()
+    visualize_domain()
