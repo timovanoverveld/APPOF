@@ -27,21 +27,24 @@ def channel_profiles():
 
     if args.d:
         data = np.loadtxt(args.d+'chanprofile')
-        z  = data[:,0] #Coordinate from 0 to Lz approximately
-        
-        z2 = data[:,1] #Unknown quantity
+    elif args.f:
+        data = np.loadtxt(args.f)
 
-        um = data[:,2] #Mean velocities
-        vm = data[:,3]
-        wm = data[:,4]
+    z  = data[:,0] #Coordinate from 0 to Lz approximately
+    
+    z2 = data[:,1] #Unknown quantity
 
-        pm = data[:,5] #Mean pressure
+    um = data[:,2] #Mean velocities
+    vm = data[:,3]
+    wm = data[:,4]
 
-        ur = data[:,6] #RMS velocities
-        vr = data[:,7] 
-        wr = data[:,8]
+    pm = data[:,5] #Mean pressure
 
-        pr = data[:,9] #RMS pressure
+    ur = data[:,6] #RMS velocities
+    vr = data[:,7] 
+    wr = data[:,8]
+
+    pr = data[:,9] #RMS pressure
 
 
     plt.figure(figsize=(12,12))
