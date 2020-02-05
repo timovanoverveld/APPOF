@@ -23,6 +23,7 @@ def velocity_crosssection():
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', type=str, help='File')
     parser.add_argument('-d', type=str, help='Directory')
+    parser.add_argument('-n', type=int, nargs='+', help='Which variables to use')
     args = parser.parse_args()
    
     #Initial data
@@ -40,7 +41,10 @@ def velocity_crosssection():
         data = np.loadtxt(args.f,skiprows=2)
 
     # User inputs
-    x,y,z = [int(x) for x in input('Give X, Y and Z: ').split()]
+    if not args.n:
+        x,y,z = [int(x) for x in input('Give X, Y and Z: ').split()]
+    else:
+        x,y,z = args.n
     
     #Plotting
     fig = plt.figure(figsize=(12,12))
@@ -54,7 +58,7 @@ def velocity_crosssection():
     
     plt.contourf(X,Y,Z,levels=100)
     plt.colorbar()
-    plt.title(str(variables[z]))
+    plt.title(str(variables[z])+' at timestep '+str(int(args.f[-11:-4])))
     plt.grid()
     plt.xlabel(variables[x])
     plt.ylabel(variables[y])
