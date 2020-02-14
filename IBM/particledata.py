@@ -20,7 +20,7 @@ def particledata():
     # Argument parser
     parser = argparse.ArgumentParser()
     parser.add_argument('f', type=str, help='File')
-    parser.add_argument('-f', type=str, help='File')
+#    parser.add_argument('-f', type=str, help='File')
     parser.add_argument('-d', type=str, help='Directory')
     parser.add_argument('-n', type=int, help='Which variables to plot')
     args = parser.parse_args()

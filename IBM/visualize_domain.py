@@ -19,7 +19,6 @@ warnings.filterwarnings("ignore")
 # Plot circles
 def circle(x,y,r):
     th = np.linspace(0,2*np.pi,100)
-   
     try:
         for i in range(0,np.size(x),1):
             z = plt.plot(x[i]+r*np.cos(th),y[i]+r*np.sin(th))
@@ -40,10 +39,15 @@ def visualize_domain():
     radius = 0.5
 
     if args.d:
-        data = np.loadtxt(args.d+'position_wall_segments.txt')
-        iw = data[:,0]
-        xw = data[:,1]
-        yw = data[:,2]
+        try:
+            data = np.loadtxt(args.d+'position_wall_segments.txt')
+            iw = data[:,0]
+            xw = data[:,1]
+            yw = data[:,2]
+        except:
+            xw = 0
+            yw = 0
+
 
         data = np.loadtxt(args.d+'position_spheres.txt')
         
@@ -109,7 +113,7 @@ def visualize_domain():
     plt.axes().set_aspect('equal')
     plt.grid()
     tplot = np.linspace(0,2*np.pi,100,'k')
-    plt.plot(np.cos(tplot),np.sin(tplot))
+    #plt.plot(np.cos(tplot),np.sin(tplot))
     plt.xlabel('x')
     plt.ylabel('y')
 
