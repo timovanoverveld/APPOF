@@ -102,8 +102,11 @@ def stokes():
 
     #Extreme values
     if args.t:
-        fig = plt.figure(figsize=(12,12))
+        fig = plt.figure(figsize=(14,12))
+        fig.subplots_adjust(wspace=0.4)
+        
         ax1 = fig.add_subplot(221)
+        color = 'tab:red'
         halfway = int(np.shape(num_t)[1]/2)
         plt.plot(treal,num_t[:,halfway],label='Numerical')
         plt.plot(treal,ana_t[:,halfway]/uref,label='Analytical')
@@ -114,10 +117,18 @@ def stokes():
         plt.legend()
         
         ax2 = fig.add_subplot(223)
-        plt.semilogy(treal,abs((ana_t[:,halfway]/uref-num_t[:,halfway])/(ana_t[:,halfway]/uref)))
-        plt.grid()
+        color = 'tab:red'
+        plt.semilogy(treal,abs((ana_t[:,halfway]/uref-num_t[:,halfway])/(ana_t[:,halfway]/uref)),color=color)
         plt.xlabel('Time')
-        plt.ylabel('Relative error')
+        plt.ylabel('Relative error',color=color)
+        plt.tick_params(axis='y', labelcolor=color)
+        
+        ax2b = ax2.twinx()
+        color = 'tab:blue'
+        plt.semilogy(treal,abs(ana_t[:,halfway]/uref-num_t[:,halfway]),color=color)
+        plt.ylabel('Absolute error',color=color)
+        plt.tick_params(axis='y', labelcolor=color)
+        plt.grid()
       
         ax3 = fig.add_subplot(222)
         edgeway = 5
@@ -130,10 +141,18 @@ def stokes():
         plt.legend()
 
         ax4 = fig.add_subplot(224)
-        plt.semilogy(treal,abs((ana_t[:,edgeway]/uref-num_t[:,edgeway])/(ana_t[:,edgeway]/uref)))
+        color = 'tab:red'
+        plt.semilogy(treal,abs((ana_t[:,edgeway]/uref-num_t[:,edgeway])/(ana_t[:,edgeway]/uref)),color=color)
         plt.grid()
         plt.xlabel('Time')
-        plt.ylabel('Relative error')
+        plt.ylabel('Relative error',color=color)
+        plt.tick_params(axis='y', labelcolor=color)
+       
+        ax4b = ax4.twinx()
+        color = 'tab:blue'
+        plt.semilogy(treal,abs(ana_t[:,edgeway]/uref-num_t[:,edgeway]),color=color)
+        plt.ylabel('Absolute error',color=color)
+        plt.tick_params(axis='y', labelcolor=color)
         
         plt.draw()
         plt.waitforbuttonpress(0)
@@ -167,11 +186,20 @@ def stokes():
     plt.title('Numerical profiles')
 
     ax3 = fig.add_subplot(133)
-    
+    color = 'tab:blue'
     yplot = [np.sum(abs((ana_t[t,:]/uref-num_t[t,:])/(ana_t[t,:]/uref*np.size(ana_t[t,:])))) for t in range(1,np.size(treal),1)]
-    plt.semilogy(treal[1:],yplot)
+    plt.semilogy(treal[1:],yplot,color=color)
     plt.xlabel('Time [s]')
-    plt.ylabel('Average relative error')
+    plt.ylabel('Average relative error',color=color)
+    plt.tick_params(axis='y', labelcolor=color)
+    
+    ax3b = ax3.twinx()
+    color = 'tab:red'
+    yplot = [np.sum(abs((ana_t[t,:]/uref-num_t[t,:])/np.size(ana_t[t,:]))) for t in range(1,np.size(treal),1)]
+    plt.semilogy(treal[1:],yplot,color=color)
+    plt.ylabel('Average absolute error',color=color)
+    plt.tick_params(axis='y', labelcolor=color)
+
     plt.grid()
     plt.title('Comparison')
     
